@@ -1,25 +1,75 @@
-let input_binary_int_opt ic =
-  try Some (input_binary_int ic)
-  with End_of_file -> None
+let input_binary_int_opt limit ic =
+  if (pos_in ic) >= limit
+  then None
+  else Some (input_binary_int ic)
 
-let dump_next_chunk ic = fun _ ->
+let dump_next_chunk_like indent limit ic = fun _ ->
   let dump sz =
     let tp = really_input_string ic 4 in
     let cur = pos_in ic in
-    seek_in ic (cur + sz - 8);
-    Printf.printf "%s -- %d bytes\n" tp sz
+    let end_of_chunk = cur + sz - 8 in
+    Printf.printf "%s%s -- %d bytes\n" indent tp sz;
+    seek_in ic end_of_chunk
+  in
+  ic |> input_binary_int_opt limit |> Option.map dump
+
+let dump_chunk_like_table indent limit ic =
+  ic |> dump_next_chunk_like indent limit |> Stream.from |> Stream.iter (fun _ -> ())
+
+let is_rec_chunk = function
+  | "clip" -> true
+  | "dinf" -> true
+  | "edts" -> true
+  | "imap" -> true
+  | "  in" -> true
+  | "matt" -> true
+  | "mdia" -> true
+  | "minf" -> true
+  | "moov" -> true
+  | "rmda" -> true
+  | "rmra" -> true
+  | "stbl" -> true
+  | "trak" -> true
+  | "tref" -> true
+  | _ -> false
+
+let chunk_like_table_skip = function
+  | "dref" -> Some(4)
+  | _ -> None
+
+type entry = { tp : string; sz : int; indent : string; end_pos : int }
+
+let seq_of_chunks indent limit ic =
+  let parse_entry sz : entry =
+    let tp = really_input_string ic 4 in
+    let cur = pos_in ic in
+    let end_pos = cur + sz - 8 in
+    { tp; sz; indent; end_pos }
   in
   let parse_size = function
-    | 0 -> dump ((in_channel_length ic) - (pos_in ic))
+    | 0 -> parse_entry (limit - (pos_in ic))
     | 1 -> failwith "TODO"
-    | sz -> dump sz
+    | sz -> parse_entry sz
   in
-  ic |> input_binary_int_opt |> Option.map parse_size
+  let next = fun _ -> ic |> input_binary_int_opt limit |> Option.map parse_size
+  in
+  Stream.from next
+
+let rec dump_atom ic { tp; sz; indent; end_pos } =
+  Printf.printf "%s%s -- %d bytes\n" indent tp sz;
+  if is_rec_chunk tp
+  then begin
+    let i = "     " ^ indent in
+    seq_of_chunks i end_pos ic |> Stream.iter (dump_atom ic)
+  end;
+  seek_in ic end_pos
 
 let dump file =
   let ic = open_in_bin file in
   try
-    ic |> dump_next_chunk |> Stream.from |> Stream.iter (fun _ -> ());
+    seq_of_chunks "" (in_channel_length ic) ic
+    |> Stream.iter (dump_atom ic);
+
     close_in ic
   with e ->
     close_in_noerr ic;
