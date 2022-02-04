@@ -16,32 +16,13 @@ let dump_next_chunk_like indent limit ic = fun _ ->
 let dump_chunk_like_table indent limit ic =
   ic |> dump_next_chunk_like indent limit |> Stream.from |> Stream.iter (fun _ -> ())
 
-let is_rec_chunk = function
-  | "clip" -> true
-  | "dinf" -> true
-  | "edts" -> true
-  | "imap" -> true
-  | "  in" -> true
-  | "matt" -> true
-  | "mdia" -> true
-  | "minf" -> true
-  | "moov" -> true
-  | "rmda" -> true
-  | "rmra" -> true
-  | "stbl" -> true
-  | "trak" -> true
-  | "tref" -> true
-  | _ -> false
-
 let chunk_like_table_skip = function
   | "dref" -> Some(8)
   | "stsd" -> Some(8)
   | _ -> None
 
-type entry = { tp : string; sz : int; indent : string; end_pos : int }
-
 let seq_of_chunks indent limit ic =
-  let parse_entry sz : entry =
+  let parse_entry sz : QTFF.Atoms.t =
     let tp = really_input_string ic 4 in
     let cur = pos_in ic in
     let end_pos = cur + sz - 8 in
@@ -56,11 +37,11 @@ let seq_of_chunks indent limit ic =
   in
   Stream.from next
 
-let dump_thing ic { tp; sz; indent; end_pos } =
+let dump_thing ic ({ tp; sz; indent; end_pos } : QTFF.Atoms.t) =
   Printf.printf "%s%s -- %d bytes\n" indent tp sz;
   seek_in ic end_pos
 
-let rec dump_atom ic { tp; sz; indent; end_pos } =
+let rec dump_atom ic ({ tp; sz; indent; end_pos } : QTFF.Atoms.t) =
   Printf.printf "%s%s -- %d bytes\n" indent tp sz;
   let i = "     " ^ indent in begin
     match tp |> chunk_like_table_skip with
@@ -68,7 +49,7 @@ let rec dump_atom ic { tp; sz; indent; end_pos } =
         seek_in ic (skip + pos_in ic);
         seq_of_chunks i end_pos ic |> Stream.iter (dump_thing ic)
     | None ->
-        if is_rec_chunk tp then seq_of_chunks i end_pos ic |> Stream.iter (dump_atom ic)
+        if QTFF.Atoms.is_recursive tp then seq_of_chunks i end_pos ic |> Stream.iter (dump_atom ic)
   end;
   seek_in ic end_pos
 
