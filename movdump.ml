@@ -34,7 +34,8 @@ let is_rec_chunk = function
   | _ -> false
 
 let chunk_like_table_skip = function
-  | "dref" -> Some(4)
+  | "dref" -> Some(8)
+  | "stsd" -> Some(8)
   | _ -> None
 
 type entry = { tp : string; sz : int; indent : string; end_pos : int }
@@ -55,12 +56,19 @@ let seq_of_chunks indent limit ic =
   in
   Stream.from next
 
+let dump_thing ic { tp; sz; indent; end_pos } =
+  Printf.printf "%s%s -- %d bytes\n" indent tp sz;
+  seek_in ic end_pos
+
 let rec dump_atom ic { tp; sz; indent; end_pos } =
   Printf.printf "%s%s -- %d bytes\n" indent tp sz;
-  if is_rec_chunk tp
-  then begin
-    let i = "     " ^ indent in
-    seq_of_chunks i end_pos ic |> Stream.iter (dump_atom ic)
+  let i = "     " ^ indent in begin
+    match tp |> chunk_like_table_skip with
+    | Some(skip) ->
+        seek_in ic (skip + pos_in ic);
+        seq_of_chunks i end_pos ic |> Stream.iter (dump_thing ic)
+    | None ->
+        if is_rec_chunk tp then seq_of_chunks i end_pos ic |> Stream.iter (dump_atom ic)
   end;
   seek_in ic end_pos
 
