@@ -1,4 +1,4 @@
-(executable
-  (name movdump)
+(executables
+  (names movdump moov)
   (libraries QTFF)
 )
