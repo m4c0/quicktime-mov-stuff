@@ -52,3 +52,13 @@ let replace_type fmt fourcc =
 let sort () =
   let by_offs ({ offs = oa; _ } : Atoms.t) ({ offs = ob; _ } : Atoms.t) = compare oa ob; in
   Moov_state.atom_tree := List.sort by_offs !Moov_state.atom_tree
+
+let verify () =
+  let r pos ({ tp; offs; sz; _ } : Atoms.t) =
+    if pos > offs then failwith (Printf.sprintf "expecting offset %d for %s but got %d" pos tp offs)
+    else offs + sz
+  in
+  try
+    List.fold_left r 0 !Moov_state.atom_tree
+    |> Printf.printf "total file is %d\n"
+  with Failure f -> print_endline f

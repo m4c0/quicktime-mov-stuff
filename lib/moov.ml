@@ -21,6 +21,7 @@ let run (str : string) =
   | ['r'; 't'; ' '; a; b; c; d] -> replace_type Machine (fourcc a b c d)
   | ['R'; 'T'; ' '; a; b; c; d] -> replace_type Human (fourcc a b c d)
   | ['s'] -> sort ()
+  | ['V'] -> verify ()
   | _ -> print_endline "?"
 
 let rec repl () =
