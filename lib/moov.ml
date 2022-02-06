@@ -1,19 +1,10 @@
-let break_str_at str idx =
-  let left = String.sub str 0 idx in
-  let right = String.sub str (idx + 1) (String.length str - idx - 1) in
-  (left, right)
-
-let break_first_word str =
-  String.index_opt str ' '
-  |> Option.map (break_str_at str)
-  |> Option.value ~default:(str, "")
-
 let atom_tree : Atoms.t list ref = ref []
 
-let load file =
+let edit file =
   try
     atom_tree := Atoms.from_file file;
-    Printf.printf "loaded %d atoms from '%s'\n" (List.length !atom_tree) file
+    !atom_tree |> List.length |> print_int;
+    print_newline ()
   with Sys_error e -> print_endline e
 
 let print () =
@@ -22,11 +13,17 @@ let print () =
   in
   List.iter print_single !atom_tree
 
+let range_cmd cmd =
+  match Stringy.break_first_word cmd with
+  | ("p", "") -> print ()
+  | _ -> print_endline "Je ne parle pas cela"
+
 let run cmd =
-  match break_first_word cmd with
-  | ("load", "") -> print_endline "Missing file name"
-  | ("load", file) -> load file
-  | ("print", "") -> print ()
+  match Stringy.break_first_word cmd with
+  | ("e", "") -> print_endline "Missing file name"
+  | ("e", file) -> edit file
+  | ("%", "") -> print_endline "Missing command after range"
+  | ("%", cmd) -> range_cmd cmd
   | _ -> print_endline "No hablo su lingua"
 
 let rec repl () =
