@@ -37,6 +37,11 @@ let jump fmt str =
 let print fmt =
   List.iter (print_single fmt) !Moov_state.atom_tree
 
+let replace_type fmt fourcc =
+  Moov_state.map_atom_at_cursor (fun a -> { a with tp = fourcc });
+  try Moov_state.atom_at_cursor () |> print_single fmt 
+  with Failure f -> print_endline f
+
 let sort () =
   let by_offs ({ offs = oa; _ } : Atoms.t) ({ offs = ob; _ } : Atoms.t) = compare oa ob; in
   Moov_state.atom_tree := List.sort by_offs !Moov_state.atom_tree
