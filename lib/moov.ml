@@ -13,18 +13,17 @@ let print () =
   in
   List.iter print_single !atom_tree
 
-let range_cmd cmd =
-  match Stringy.break_first_word cmd with
-  | ("p", "") -> print ()
-  | _ -> print_endline "Je ne parle pas cela"
+let list_of_str s = List.init (String.length s) (String.get s)
+let trimmed_substr s idx = 
+  String.sub s idx ((String.length s) - idx)
+  |> String.trim
 
-let run cmd =
-  match Stringy.break_first_word cmd with
-  | ("e", "") -> print_endline "Missing file name"
-  | ("e", file) -> edit file
-  | ("%", "") -> print_endline "Missing command after range"
-  | ("%", cmd) -> range_cmd cmd
-  | _ -> print_endline "No hablo su lingua"
+let run (str : string) =
+  match list_of_str str with
+  | 'e' :: ' ' :: _ -> edit (trimmed_substr str 2)
+  | ['%'; 'p']
+  | ['%'; ' '; 'p'] -> print ()
+  | _ -> print_endline "?"
 
 let rec repl () =
   try
