@@ -8,13 +8,16 @@ let fourcc a b c d =
 
 open Moov_actions
 let run (str : string) =
+  let trim = trimmed_substr str in
   match list_of_str str with
   | ['a'] -> append ()
-  | 'e' :: ' ' :: _ -> edit (trimmed_substr str 2)
-  | 'j' :: ' ' :: _ -> jump Machine (trimmed_substr str 2)
-  | 'J' :: ' ' :: _ -> jump Human (trimmed_substr str 2)
+  | 'e' :: ' ' :: _ -> edit (trim 2)
+  | 'j' :: ' ' :: _ -> jump Machine (trim 2)
+  | 'J' :: ' ' :: _ -> jump Human (trim 2)
   | ['p'] -> print Machine
   | ['P'] -> print Human
+  | 'r' :: 's' :: ' ' :: _ -> replace_size Machine (trim 3)
+  | 'R' :: 'S' :: ' ' :: _ -> replace_size Human (trim 3)
   | ['r'; 't'; ' '; a; b; c; d] -> replace_type Machine (fourcc a b c d)
   | ['R'; 'T'; ' '; a; b; c; d] -> replace_type Human (fourcc a b c d)
   | ['s'] -> sort ()
