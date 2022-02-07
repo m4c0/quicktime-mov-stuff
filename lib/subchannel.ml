@@ -7,6 +7,16 @@ let open_in (file : string) : t = file |> open_in_bin |> from_channel
 let close_in ((_, ic) : t) : unit = Stdlib.close_in ic
 let close_in_noerr ((_, ic) : t) : unit = Stdlib.close_in_noerr ic
 
+let open_with (fn : t -> 'a) (file : string) : 'a =
+  let ic = open_in file in
+  try
+    let res = fn ic in
+    close_in ic;
+    res
+  with e ->
+    close_in_noerr ic;
+    raise e
+
 let is_empty ((lim, ic) : t) : bool = (pos_in ic) == lim
 
 let pos_in ((_, ic) : t) : int = Stdlib.pos_in ic

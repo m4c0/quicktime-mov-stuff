@@ -45,11 +45,4 @@ and from_channel (ic : Subchannel.t) : t list =
   | Some(a) -> a :: (from_channel ic)
 
 let from_file (file : string) : t list =
-  let ic = Subchannel.open_in file in
-  try
-    let res = from_channel ic in
-    Subchannel.close_in ic;
-    res
-  with e ->
-    Subchannel.close_in_noerr ic;
-    raise e
+  Subchannel.open_with from_channel file
