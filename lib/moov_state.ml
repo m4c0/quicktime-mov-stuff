@@ -2,8 +2,14 @@ let atom_tree : Atoms.t list ref = ref []
 let cursor : int ref = ref 0
 
 let atom_at_opt o : Atoms.t option =
-  let offs_match (a : Atoms.t) = a.offs == o in
-  List.find_opt offs_match !atom_tree
+  let rec mapper (a : Atoms.t) =
+    if a.offs == o
+    then Some a
+    else if (List.length a.children) > 0
+    then List.find_map mapper a.children
+    else None
+  in
+  List.find_map mapper !atom_tree
 
 let atom_at_cursor () =
   match atom_at_opt !cursor with
