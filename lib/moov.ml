@@ -10,7 +10,7 @@ open Moov_actions
 let run (str : string) =
   let trim = trimmed_substr str in
   match list_of_str str with
-  | ['a'] -> append ()
+  | 'a' :: ' ' :: a :: b :: c :: d :: ' ' :: _ -> append (fourcc a b c d) (trim 7 |> int_of_string) 
   | 'e' :: ' ' :: _ -> edit (trim 2)
   | 'j' :: ' ' :: _ -> jump Machine (trim 2)
   | 'J' :: ' ' :: _ -> jump Human (trim 2)

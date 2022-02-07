@@ -6,18 +6,10 @@ let print_single (tgt : target) ({ tp; offs; sz; children } : Atoms.t) =
 
 (* *)
 
-let rec append () =
-  match read_line () with
-  | "." -> ()
-  | line ->
-      let append_item tp offs sz =
-        let atom : Atoms.t = { tp; offs; sz; children = [] } in
-        Moov_state.atom_tree := atom :: !Moov_state.atom_tree
-      in
-      try
-        Scanf.sscanf line "%4s;%d;%d" append_item;
-        append ()
-      with _ -> print_endline "?"
+let append tp sz =
+  let offs = Moov_state.file_size () in
+  let atom : Atoms.t = { tp; offs; sz; children = [] } in
+  Moov_state.atom_tree := atom :: !Moov_state.atom_tree
 
 let edit file =
   try

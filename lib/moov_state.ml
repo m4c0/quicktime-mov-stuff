@@ -17,3 +17,7 @@ let map_atom_at_cursor fn =
     else a
   in
   atom_tree := List.map repl !atom_tree
+
+let file_size () =
+  let fold res ({ offs; sz; _ } : Atoms.t) = max res (offs + sz) in
+  List.fold_left fold 0 !atom_tree
