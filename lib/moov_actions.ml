@@ -23,6 +23,10 @@ let jump fmt offs = Moov_state.move_cursor offs |> print_single fmt
 
 let print fmt = Moov_state.iter_tree (print_single fmt)
 
+let print_children fmt =
+  let a = Moov_state.atom_at_cursor () in
+  List.iter (print_single fmt) a.children
+
 let replace_size fmt len =
   Moov_state.map_atom_at_cursor (fun a -> { a with sz = len });
   Moov_state.atom_at_cursor () |> print_single fmt 
