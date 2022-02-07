@@ -21,8 +21,14 @@ let is_empty ((lim, ic) : t) : bool = (pos_in ic) == lim
 
 let pos_in ((_, ic) : t) : int = Stdlib.pos_in ic
 
+let input_byte ((_, ic) : t) : int = Stdlib.input_byte ic
 let input_binary_int ((_, ic) : t) : int = Stdlib.input_binary_int ic
 let input_fourcc ((_, ic) : t) : string = Stdlib.really_input_string ic 4
+
+let seek_in ((l, ic) : t) (p : int) : unit =
+  if p > l
+  then failwith "skip past the end"
+  else Stdlib.seek_in ic p
 
 let seek_in_end ((l, ic) : t) : unit = Stdlib.seek_in ic l
 

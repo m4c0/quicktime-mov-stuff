@@ -17,6 +17,7 @@ let run (str : string) =
   let size i = trim i |> ios "invalid size" in
   match list_of_str str with
   | 'a' :: ' ' :: a :: b :: c :: d :: ' ' :: _ -> append (fourcc a b c d) (offs 7)
+  | ['D'] -> dump ()
   | 'e' :: ' ' :: _ -> edit (trim 2)
   | 'j' :: ' ' :: _ -> jump Machine (offs 2)
   | 'J' :: ' ' :: _ -> jump Human (offs 2)
