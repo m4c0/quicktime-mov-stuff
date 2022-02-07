@@ -7,27 +7,26 @@ let print_single (tgt : target) ({ tp; offs; sz; children } : Atoms.t) =
 (* *)
 
 let append tp sz =
-  let offs = Moov_state.file_size () in
+  let max_len res ({ offs; sz; _ } : Atoms.t) = max res (offs + sz) in
+  let offs = Moov_state.fold_tree max_len 0 in
   let atom : Atoms.t = { tp; offs; sz; children = [] } in
-  Moov_state.atom_tree := atom :: !Moov_state.atom_tree
+  Moov_state.map_tree (fun l -> atom :: l) |> ignore;
+  print_int offs;
+  print_newline ()
 
 let edit file =
   try
-    Moov_state.atom_tree := Atoms.from_file file;
-    !Moov_state.atom_tree |> List.length |> print_int;
+    Moov_state.map_tree (fun _ -> Atoms.from_file file)
+    |> List.length |> print_int;
     print_newline ()
   with Sys_error e -> print_endline e
 
 let jump fmt str = 
   match int_of_string_opt str with
   | None -> print_endline (str ^ ": invalid offset")
-  | Some o ->
-      match Moov_state.atom_at_opt o with
-      | None -> print_endline (str ^ ": no atom there")
-      | Some a -> Moov_state.cursor := o; print_single fmt a
+  | Some o -> Moov_state.move_cursor o |> print_single fmt
 
-let print fmt =
-  List.iter (print_single fmt) !Moov_state.atom_tree
+let print fmt = Moov_state.iter_tree (print_single fmt)
 
 let replace_size fmt len_str =
   try 
@@ -43,14 +42,14 @@ let replace_type fmt fourcc =
 
 let sort () =
   let by_offs ({ offs = oa; _ } : Atoms.t) ({ offs = ob; _ } : Atoms.t) = compare oa ob; in
-  Moov_state.atom_tree := List.sort by_offs !Moov_state.atom_tree
+  Moov_state.map_tree (List.sort by_offs) |> ignore
 
 let verify () =
-  let r pos ({ tp; offs; sz; _ } : Atoms.t) =
+  let checker pos ({ tp; offs; sz; _ } : Atoms.t) =
     if pos > offs then failwith (Printf.sprintf "expecting offset %d for %s but got %d" pos tp offs)
     else offs + sz
   in
   try
-    List.fold_left r 0 !Moov_state.atom_tree
+    Moov_state.fold_tree checker 0
     |> Printf.printf "total file is %d\n"
   with Failure f -> print_endline f

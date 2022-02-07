@@ -18,6 +18,11 @@ let map_atom_at_cursor fn =
   in
   atom_tree := List.map repl !atom_tree
 
-let file_size () =
-  let fold res ({ offs; sz; _ } : Atoms.t) = max res (offs + sz) in
-  List.fold_left fold 0 !atom_tree
+let move_cursor o =
+  match atom_at_opt o with
+  | None -> failwith (Printf.sprintf "%d: no atom there" o)
+  | Some a -> cursor := o; a
+
+let fold_tree fn init = List.fold_left fn init !atom_tree
+let iter_tree fn = List.iter fn !atom_tree
+let map_tree fn = atom_tree := fn !atom_tree; !atom_tree
