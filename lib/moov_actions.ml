@@ -9,22 +9,22 @@ let print_single (tgt : target) ({ tp; offs; sz; children } : Atoms.t) =
 
 let current_file : string ref = ref "a.mov"
 
-let new_kid_on_the_block tp sz l =
+let new_kid_on_the_block tp sz i l =
   let max_len res ({ offs; sz; _ } : Atoms.t) = max res (offs + sz) in
-  let offs = Moov_state.fold_tree max_len 0 in
+  let offs = List.fold_left max_len i l in
   let atom : Atoms.t = { tp; offs; sz; children = [] } in
   atom :: l
 
 (* *)
 
 let append fmt tp sz =
-  Moov_state.map_tree (new_kid_on_the_block tp sz)
+  Moov_state.map_tree (new_kid_on_the_block tp sz 0)
   |> List.hd
   |> print_single fmt
 
 let append_children fmt tp sz =
   let nkotb = new_kid_on_the_block tp sz in
-  let mapper (a : Atoms.t) = { a with children = nkotb a.children } in
+  let mapper (a : Atoms.t) = { a with children = nkotb (a.offs + 8) a.children } in
   let _ = Moov_state.map_atom_at_cursor mapper in
   let ({ children; _ } : Atoms.t) = Moov_state.atom_at_cursor () in
   children |> List.hd |> print_single fmt
@@ -47,11 +47,11 @@ let dump () =
   Subchannel.open_with extract !current_file
 
 let edit file =
-  Moov_state.map_tree (fun _ -> Atoms.from_file file)
-  |> List.length |> print_int;
-  Moov_state.move_cursor 0 |> ignore;
+  let new_list = Moov_state.map_tree (fun _ -> Atoms.from_file file) in
+  let len = List.length new_list in
+  if len > 0 then Moov_state.move_cursor 0 |> ignore;
   current_file := file;
-  print_newline ()
+  Printf.printf "%d\n" len
 
 let jump fmt offs = Moov_state.move_cursor offs |> print_single fmt
 
@@ -74,7 +74,9 @@ let replace_type fmt fourcc =
 
 let sort () =
   let by_offs ({ offs = oa; _ } : Atoms.t) ({ offs = ob; _ } : Atoms.t) = compare oa ob; in
-  Moov_state.map_tree (List.sort by_offs) |> ignore
+  let rec sort_kids (a : Atoms.t) = { a with children = rec_sort a.children }
+  and rec_sort a : Atoms.t list = a |> List.sort by_offs |> List.map sort_kids in
+  Moov_state.map_tree rec_sort |> ignore
 
 let verify () =
   let rec checker pos ({ tp; offs; sz; children } : Atoms.t) =
@@ -96,7 +98,7 @@ let verify () =
 
     aend
   in
-  let file_size = (Unix.stat !current_file).st_size in
+  let file_size = try (Unix.stat !current_file).st_size with _ -> 0 in
   let tree_size = Moov_state.fold_tree checker 0 in
   if file_size = tree_size
   then Printf.printf "file size is %d\n" file_size
