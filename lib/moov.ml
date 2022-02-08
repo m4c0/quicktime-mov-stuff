@@ -26,6 +26,8 @@ let run (str : string) =
   | ['P'] -> print Human
   | ['p'; 'c'] -> print_children Machine
   | ['P'; 'C'] -> print_children Human
+  | ['p'; 'r'] -> print_roots Machine
+  | ['P'; 'R'] -> print_roots Human
   | 'r' :: 's' :: ' ' :: _ -> replace_size Machine (size 3)
   | 'R' :: 'S' :: ' ' :: _ -> replace_size Human (size 3)
   | ['r'; 't'; ' '; a; b; c; d] -> replace_type Machine (fourcc a b c d)
