@@ -62,9 +62,24 @@ let sort () =
   Moov_state.map_tree (List.sort by_offs) |> ignore
 
 let verify () =
-  let checker pos ({ tp; offs; sz; _ } : Atoms.t) =
-    if pos > offs then failwith (Printf.sprintf "expecting offset %d for %s but got %d" pos tp offs)
-    else offs + sz
+  let rec checker pos ({ tp; offs; sz; children } : Atoms.t) =
+    let aend = offs + sz in
+
+    if pos > offs
+    then failwith (Printf.sprintf "expecting offset %d for %s but got %d" pos tp offs);
+
+    if Atoms.is_recursive tp
+    then begin
+      if children = [] then failwith (Printf.sprintf "expecting children at %d for %s" pos tp);
+      let cend = List.fold_left checker 0 children in
+      if cend <> aend
+      then 
+        failwith
+          (Printf.sprintf "children end mismatch at %d for %s - found %d - expected %d" offs tp cend aend)
+    end
+    else if children <> [] then failwith (Printf.sprintf "unexpected children at %d for %s" pos tp);
+
+    aend
   in
   let file_size = (Unix.stat !current_file).st_size in
   let tree_size = Moov_state.fold_tree checker 0 in
