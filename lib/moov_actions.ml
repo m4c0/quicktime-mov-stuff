@@ -38,23 +38,6 @@ let dump () =
   in
   Subchannel.open_with extract !current_file
 
-let dump_hex () =
-  let a = Moov_state.atom_at_cursor() in
-  let rec dump_bytes n ic =
-    let idx = n mod 16 in
-    if n < a.sz then begin
-      Printf.printf "%02x" (Subchannel.input_byte ic);
-      print_string (match idx with 7 -> "    " | 15 -> "\n" | _ -> " ");
-      dump_bytes (n + 1) ic
-    end
-    else if idx < 15 then print_newline ()
-  in
-  let extract ic =
-    Subchannel.seek_in ic a.offs;
-    dump_bytes 0 ic
-  in
-  Subchannel.open_with extract !current_file
-
 let edit file =
   let new_list = Moov_state.map_tree (fun _ -> Atoms.from_file file) in
   let len = List.length new_list in

@@ -20,7 +20,19 @@ let elst (ic : Subchannel.t) =
     let fr = (float_of_int r) /. 65536.0 in
     Printf.printf "  Duration: %d - Time: %d - Rate: %f\n" d i fr
   done
+
+let hexdump (ic : Subchannel.t) =
+  let rec dump_bytes n ic =
+    let idx = n mod 16 in
+    if n < (Subchannel.limit_of ic) then begin
+      Printf.printf "%02x" (Subchannel.input_byte ic);
+      print_string (match idx with 7 -> "    " | 15 -> "\n" | _ -> " ");
+      dump_bytes (n + 1) ic
+    end
+    else if idx < 15 then print_newline ()
+  in
+  dump_bytes 0 ic
   
 let parser_of = function
   | "elst" -> elst
-  | x -> fun _ -> failwith (x ^ ": no support for changing it")
+  | _ -> hexdump
