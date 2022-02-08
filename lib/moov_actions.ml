@@ -2,7 +2,10 @@ type target = Machine | Human
 let print_single (tgt : target) ({ tp; offs; sz; children } : Atoms.t) =
   match tgt with
   | Machine -> Printf.printf "%s;%d;%d;%d\n" tp offs sz (List.length children)
-  | Human -> Printf.printf "%s @%d size:%d (%d children)\n" tp offs sz (List.length children)
+  | Human ->
+      if Atoms.is_recursive tp
+      then Printf.printf "%s @%d size:%d (%d children)\n" tp offs sz (List.length children)
+      else Printf.printf "%s @%d size:%d\n" tp offs sz
 
 let current_file : string ref = ref "a.mov"
 

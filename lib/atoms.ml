@@ -5,8 +5,7 @@ type t = {
   children : t list;
 }
 
-let rec child_of ic tp : t list =
-  match tp with
+let is_recursive = function
   | "clip"
   | "dinf"
   | "edts"
@@ -20,8 +19,13 @@ let rec child_of ic tp : t list =
   | "rmra"
   | "stbl"
   | "trak"
-  | "tref" -> from_channel ic
-  | _ -> []
+  | "tref" -> true
+  | _ -> false
+
+let rec child_of ic tp : t list =
+  if is_recursive tp
+  then from_channel ic
+  else []
 and unsafe_atom_from_channel ic : t =
   let offs = Subchannel.pos_in ic in
   let sz =
