@@ -17,10 +17,10 @@ let atom_at_cursor () =
   | Some a -> a
 
 let map_atom_at_cursor fn =
-  let repl (a : Atoms.t) =
+  let rec repl (a : Atoms.t) =
     if !cursor = a.offs
     then fn a
-    else a
+    else { a with children = List.map repl a.children }
   in
   atom_tree := List.map repl !atom_tree
 
