@@ -9,14 +9,25 @@ let print_single (tgt : target) ({ tp; offs; sz; children } : Atoms.t) =
 
 let current_file : string ref = ref "a.mov"
 
-(* *)
-
-let append fmt tp sz =
+let new_kid_on_the_block tp sz l =
   let max_len res ({ offs; sz; _ } : Atoms.t) = max res (offs + sz) in
   let offs = Moov_state.fold_tree max_len 0 in
   let atom : Atoms.t = { tp; offs; sz; children = [] } in
-  Moov_state.map_tree (fun l -> atom :: l) |> ignore;
-  print_single fmt atom
+  atom :: l
+
+(* *)
+
+let append fmt tp sz =
+  Moov_state.map_tree (new_kid_on_the_block tp sz)
+  |> List.hd
+  |> print_single fmt
+
+let append_children fmt tp sz =
+  let nkotb = new_kid_on_the_block tp sz in
+  let mapper (a : Atoms.t) = { a with children = nkotb a.children } in
+  let _ = Moov_state.map_atom_at_cursor mapper in
+  let ({ children; _ } : Atoms.t) = Moov_state.atom_at_cursor () in
+  children |> List.hd |> print_single fmt
 
 let dump () =
   let a = Moov_state.atom_at_cursor() in
@@ -38,6 +49,7 @@ let dump () =
 let edit file =
   Moov_state.map_tree (fun _ -> Atoms.from_file file)
   |> List.length |> print_int;
+  Moov_state.move_cursor 0 |> ignore;
   current_file := file;
   print_newline ()
 

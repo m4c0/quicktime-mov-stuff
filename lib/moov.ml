@@ -18,6 +18,8 @@ let run (str : string) =
   match list_of_str str with
   | 'a' :: ' ' :: a :: b :: c :: d :: ' ' :: _ -> append Machine (fourcc a b c d) (offs 7)
   | 'A' :: ' ' :: a :: b :: c :: d :: ' ' :: _ -> append Human (fourcc a b c d) (offs 7)
+  | 'a' :: 'c' :: ' ' :: a :: b :: c :: d :: ' ' :: _ -> append_children Machine (fourcc a b c d) (offs 8)
+  | 'A' :: 'C' :: ' ' :: a :: b :: c :: d :: ' ' :: _ -> append_children Human (fourcc a b c d) (offs 8)
   | ['D'] -> dump ()
   | 'e' :: ' ' :: _ -> edit (trim 2)
   | 'j' :: ' ' :: _ -> jump Machine (offs 2)
