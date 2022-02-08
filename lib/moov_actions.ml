@@ -56,6 +56,14 @@ let print_children fmt =
 
 let print_roots fmt = Moov_state.iter_tree (print_single fmt)
 
+let print_tree () =
+  let rec r i (a : Atoms.t) =
+    print_string i;
+    print_single Human a;
+    List.iter (r ("     " ^ i)) a.children
+  in
+  Moov_state.iter_tree (r "")
+
 let replace_size fmt len =
   Moov_state.map_atom_at_cursor (fun a -> { a with sz = len });
   Moov_state.atom_at_cursor () |> print_single fmt 

@@ -22,6 +22,7 @@ let run (str : string) =
   | 'A' :: 'C' :: ' ' :: a :: b :: c :: d :: ' ' :: _ -> append_children Human (fourcc a b c d) (offs 8)
   | ['D'] -> dump ()
   | 'e' :: ' ' :: _ -> edit (trim 2)
+  | 'E' :: ' ' :: _ -> edit (trim 2); print_tree ()
   | 'j' :: ' ' :: _ -> jump Machine (offs 2)
   | 'J' :: ' ' :: _ -> jump Human (offs 2)
   | ['p'] -> print Machine
@@ -30,6 +31,7 @@ let run (str : string) =
   | ['P'; 'C'] -> print_children Human
   | ['p'; 'r'] -> print_roots Machine
   | ['P'; 'R'] -> print_roots Human
+  | ['P'; 'T'] -> print_tree ()
   | 'r' :: 's' :: ' ' :: _ -> replace_size Machine (size 3)
   | 'R' :: 'S' :: ' ' :: _ -> replace_size Human (size 3)
   | ['r'; 't'; ' '; a; b; c; d] -> replace_type Machine (fourcc a b c d)

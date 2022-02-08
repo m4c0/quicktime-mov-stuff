@@ -13,6 +13,7 @@ let is_recursive = function
   | "  in"
   | "matt"
   | "mdia"
+  | "meta"
   | "minf"
   | "moov"
   | "rmda"
