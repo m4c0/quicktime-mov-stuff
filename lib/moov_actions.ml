@@ -106,8 +106,8 @@ let verify () =
   then Printf.printf "file size will grow - disk: %d - tree: %d\n" file_size tree_size
   else Printf.printf "atoms are not covering the whole file - disk: %d - tree %d\n" file_size tree_size
 
-let write () =
-  let oc = open_out_gen [Open_wronly; Open_binary] 0o666 !current_file in
+let write_copy file =
+  let oc = open_out_gen [Open_wronly; Open_creat; Open_binary] 0o666 file in
   let rec w (a : Atoms.t) =
     seek_out oc a.offs;
     output_binary_int oc a.sz;
@@ -122,3 +122,4 @@ let write () =
     close_out_noerr oc;
     raise e
 
+let write () = write_copy !current_file

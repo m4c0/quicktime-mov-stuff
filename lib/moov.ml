@@ -37,7 +37,9 @@ let run (str : string) =
   | ['s'] -> sort ()
   | ['V'] -> verify ()
   | ['w'] -> write ()
+  | 'w' :: ' ' :: _ -> write_copy (trim 2)
   | ['W'] -> verify (); write ()
+  | 'W' :: ' ' :: _ -> verify (); write_copy (trim 2)
   | _ -> print_endline "?"
 
 let safe_run (str : string) =
