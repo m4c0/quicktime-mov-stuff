@@ -21,6 +21,7 @@ let run (str : string) =
   | 'a' :: 'c' :: ' ' :: a :: b :: c :: d :: ' ' :: _ -> append_children Machine (fourcc a b c d) (offs 8)
   | 'A' :: 'C' :: ' ' :: a :: b :: c :: d :: ' ' :: _ -> append_children Human (fourcc a b c d) (offs 8)
   | ['D'] -> dump ()
+  | ['D'; 'X'] -> dump_hex ()
   | 'e' :: ' ' :: _ -> edit (trim 2)
   | 'j' :: ' ' :: _ -> jump Machine (offs 2)
   | 'J' :: ' ' :: _ -> jump Human (offs 2)

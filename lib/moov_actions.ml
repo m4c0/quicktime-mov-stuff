@@ -31,6 +31,15 @@ let append_children fmt tp sz =
 
 let dump () =
   let a = Moov_state.atom_at_cursor() in
+  let fn = Moov_atom_parsers.parser_of a.tp in
+  let extract ic =
+    Subchannel.seek_in ic a.offs;
+    Subchannel.limit_by ic a.sz |> fn
+  in
+  Subchannel.open_with extract !current_file
+
+let dump_hex () =
+  let a = Moov_state.atom_at_cursor() in
   let rec dump_bytes n ic =
     let idx = n mod 16 in
     if n < a.sz then begin
