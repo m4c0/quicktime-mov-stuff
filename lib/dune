@@ -1,5 +1,6 @@
 (library
  (name QTFF)
+ (libraries unix)
  (private_modules
    moov_actions
    moov_state))

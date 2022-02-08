@@ -31,6 +31,8 @@ let run (str : string) =
   | ['R'; 'T'; ' '; a; b; c; d] -> replace_type Human (fourcc a b c d)
   | ['s'] -> sort ()
   | ['V'] -> verify ()
+  | ['w'] -> write ()
+  | ['W'] -> verify (); write ()
   | _ -> print_endline "?"
 
 let safe_run (str : string) =

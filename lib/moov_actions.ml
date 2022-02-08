@@ -64,5 +64,27 @@ let verify () =
     if pos > offs then failwith (Printf.sprintf "expecting offset %d for %s but got %d" pos tp offs)
     else offs + sz
   in
-  Moov_state.fold_tree checker 0
-  |> Printf.printf "total file is %d\n"
+  let file_size = (Unix.stat !current_file).st_size in
+  let tree_size = Moov_state.fold_tree checker 0 in
+  if file_size = tree_size
+  then Printf.printf "file size is %d\n" file_size
+  else if file_size < tree_size
+  then Printf.printf "file size will grow - disk: %d - tree: %d\n" file_size tree_size
+  else Printf.printf "atoms are not covering the whole file - disk: %d - tree %d\n" file_size tree_size
+
+let write () =
+  let oc = open_out_gen [Open_wronly; Open_binary] 0o666 !current_file in
+  let rec w (a : Atoms.t) =
+    seek_out oc a.offs;
+    output_binary_int oc a.sz;
+    output_string oc a.tp;
+    List.iter w a.children;
+    while (pos_out oc < (a.offs + a.sz)) do output_byte oc 0 done
+  in
+  try
+    Moov_state.iter_tree w;
+    close_out oc
+  with e ->
+    close_out_noerr oc;
+    raise e
+
