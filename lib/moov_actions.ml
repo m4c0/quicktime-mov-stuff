@@ -8,13 +8,12 @@ let current_file : string ref = ref "a.mov"
 
 (* *)
 
-let append tp sz =
+let append fmt tp sz =
   let max_len res ({ offs; sz; _ } : Atoms.t) = max res (offs + sz) in
   let offs = Moov_state.fold_tree max_len 0 in
   let atom : Atoms.t = { tp; offs; sz; children = [] } in
   Moov_state.map_tree (fun l -> atom :: l) |> ignore;
-  print_int offs;
-  print_newline ()
+  print_single fmt atom
 
 let dump () =
   let a = Moov_state.atom_at_cursor() in
