@@ -7,7 +7,7 @@ let atom_at_opt o : Atoms.t option =
     then Some a
     else 
       match a.data with
-      | Leaf -> None
+      | Leaf _ -> None
       | Node l -> List.find_map mapper l
   in
   List.find_map mapper !atom_tree
@@ -23,7 +23,7 @@ let map_atom_at_cursor fn =
     then fn a
     else
       match a.data with
-      | Leaf -> a
+      | Leaf _ -> a
       | Node l -> { a with data = Node (List.map repl l) }
   in
   atom_tree := List.map repl !atom_tree

@@ -1,18 +1,24 @@
 type target = Machine | Human
-let print_single (tgt : target) ({ tp; offs; sz; data } : Atoms.t) =
+let print_single (tgt : target) ({ tp; offs; data } : Atoms.t) =
   match tgt with
-  | Machine -> Printf.printf "%s;%d;%d\n" tp offs sz
-  | Human ->
+  | Machine -> (
+      Printf.printf "%s;%d" tp offs;
       match data with
-      | Node x -> Printf.printf "%s @%d size:%d (%d children)\n" tp offs sz (List.length x)
-      | Leaf -> Printf.printf "%s @%d size:%d\n" tp offs sz
+      | Node _ -> print_newline ()
+      | Leaf s -> Printf.printf ";%d\n" s
+  )
+  | Human ->
+      Printf.printf "%s @%d" tp offs;
+      match data with
+      | Node x -> Printf.printf " children:%d\n" (List.length x)
+      | Leaf s -> Printf.printf " size:%d\n" s
 
 let current_file : string ref = ref "a.mov"
 
 let new_kid_on_the_block tp sz i l =
-  let max_len res ({ offs; sz; _ } : Atoms.t) = max res (offs + sz) in
+  let max_len res (a : Atoms.t) = max res (a.offs + Atoms.size_of a) in
   let offs = List.fold_left max_len i l in
-  let atom : Atoms.t = Atoms.make tp offs sz in
+  let atom : Atoms.t = Atoms.make tp sz offs in
   atom :: l
 
 (* *)
@@ -25,14 +31,14 @@ let append fmt tp sz =
 let append_children fmt tp sz =
   let nkotb (a : Atoms.t) : Atoms.t Atoms.node =
     match a.data with
-    | Leaf -> failwith "can't add children to leaf atoms"
+    | Leaf _ -> failwith "can't add children to leaf atoms"
     | Node l -> Node (new_kid_on_the_block tp sz (a.offs + 8) l)
   in
   let mapper (a : Atoms.t) = { a with data = nkotb a } in
   let _ = Moov_state.map_atom_at_cursor mapper in
   let ({ data; _ } : Atoms.t) = Moov_state.atom_at_cursor () in
   match data with
-  | Leaf -> failwith "this should neve happen"
+  | Leaf _ -> failwith "this should neve happen"
   | Node l -> l |> List.hd |> print_single fmt
 
 let dump () =
@@ -40,7 +46,7 @@ let dump () =
   let fn = Moov_atom_parsers.parser_of a.tp in
   let extract ic =
     Subchannel.seek_in ic a.offs;
-    Subchannel.limit_by ic a.sz |> fn
+    Subchannel.limit_by ic (Atoms.size_of a) |> fn
   in
   Subchannel.open_with extract !current_file
 
@@ -59,7 +65,7 @@ let print fmt =
 let print_children fmt =
   let a = Moov_state.atom_at_cursor () in
   match a.data with
-  | Leaf -> failwith (a.tp ^ ": does not contain children")
+  | Leaf _ -> failwith (a.tp ^ ": does not contain children")
   | Node x -> List.iter (print_single fmt) x
 
 let print_roots fmt = Moov_state.iter_tree (print_single fmt)
@@ -69,13 +75,18 @@ let print_tree () =
     print_string i;
     print_single Human a;
     match a.data with
-    | Leaf -> ()
+    | Leaf _ -> ()
     | Node x -> List.iter (r ("     " ^ i)) x
   in
   Moov_state.iter_tree (r "")
 
 let replace_size fmt len =
-  Moov_state.map_atom_at_cursor (fun a -> { a with sz = len });
+  let fn (a : Atoms.t) : Atoms.t =
+    match a.data with
+    | Leaf _ -> { a with data = Leaf len }
+    | Node _ -> failwith (a.tp ^ ": size is defined by its children")
+  in
+  Moov_state.map_atom_at_cursor fn;
   Moov_state.atom_at_cursor () |> print_single fmt 
 
 let replace_type fmt fourcc =
@@ -86,28 +97,21 @@ let sort () =
   let by_offs ({ offs = oa; _ } : Atoms.t) ({ offs = ob; _ } : Atoms.t) = compare oa ob; in
   let rec sort_kids (a : Atoms.t) =
     match a.data with
-    | Leaf -> a
+    | Leaf _ -> a
     | Node x -> { a with data = Node (rec_sort x) }
   and rec_sort a : Atoms.t list = a |> List.sort by_offs |> List.map sort_kids in
   Moov_state.map_tree rec_sort |> ignore
 
 let verify () =
-  let rec checker pos ({ tp; offs; sz; data } : Atoms.t) =
-    let aend = offs + sz in
+  let rec checker pos (a : Atoms.t) =
+    if pos > a.offs
+    then failwith (Printf.sprintf "expecting offset %d for %s but got %d" pos a.tp a.offs);
 
-    if pos > offs
-    then failwith (Printf.sprintf "expecting offset %d for %s but got %d" pos tp offs);
-
-    match data with
+    match a.data with
     | Node children ->
-      if children = [] then failwith (Printf.sprintf "expecting children at %d for %s" pos tp);
-      let cend = List.fold_left checker 0 children in
-      if cend <> aend
-      then 
-        failwith
-          (Printf.sprintf "children end mismatch at %d for %s - found %d - expected %d" offs tp cend aend);
-      aend
-    | Leaf -> aend
+      if children = [] then failwith (Printf.sprintf "expecting children at %d for %s" pos a.tp);
+      List.fold_left checker 0 children
+    | Leaf s -> a.offs + s
 
   in
   let file_size = try (Unix.stat !current_file).st_size with _ -> 0 in
@@ -122,10 +126,10 @@ let write_copy file =
   let oc = open_out_gen [Open_wronly; Open_creat; Open_binary] 0o666 file in
   let rec w (a : Atoms.t) =
     seek_out oc a.offs;
-    output_binary_int oc a.sz;
+    output_binary_int oc (Atoms.size_of a);
     output_string oc a.tp;
     match a.data with
-    | Leaf -> while (pos_out oc < (a.offs + a.sz)) do output_byte oc 0 done
+    | Leaf s -> while (pos_out oc < (a.offs + s)) do output_byte oc 0 done
     | Node x -> List.iter w x
   in
   try
