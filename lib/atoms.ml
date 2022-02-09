@@ -1,10 +1,10 @@
 type 'a node =
-  | Leaf of int
+  | Leaf of bytes
   | Node of 'a list
 
 type t = {
   tp : string;
-  offs : int;
+  offs : int; (* TODO: automatic offset - requires some form of ordering *)
   data : t node;
 }
 
@@ -26,32 +26,32 @@ let is_recursive = function
   | "tref" -> true
   | _ -> false
 
-let make tp sz offs : t =
+let make tp bs offs : t =
   if is_recursive tp
   then { tp; offs; data = Node [] }
-  else { tp; offs; data = Leaf sz }
+  else { tp; offs; data = Leaf bs }
 
 let rec size_of (a : t) : int =
   match a.data with
-  | Leaf s -> s
+  | Leaf s -> Bytes.length s
   | Node l ->
       let folder acc a = acc + (size_of a) in
       List.fold_left folder 8 l
 
 let rec unsafe_atom_from_channel ic : t =
   let offs = Subchannel.pos_in ic in
-  let sz =
+  let sz = -8 +
     match Subchannel.input_binary_int ic with 
     | 0 -> Subchannel.limit_of ic
     | 1 -> failwith "TODO"
     | x -> x
   in
   let tp = Subchannel.input_fourcc ic in
-  let lic = Subchannel.limit_by ic (sz - 8) in
+  let lic = Subchannel.limit_by ic sz in
   let data =
     if is_recursive tp
     then Node (from_channel lic)
-    else Leaf sz
+    else Leaf (Subchannel.input_bytes lic (Bytes.create sz) 0 sz)
   in
   Subchannel.seek_in_end lic;
   { tp; offs; data }

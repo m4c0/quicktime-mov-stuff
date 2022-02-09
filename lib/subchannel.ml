@@ -21,6 +21,8 @@ let is_empty ((lim, ic) : t) : bool = (pos_in ic) == lim
 
 let pos_in ((_, ic) : t) : int = Stdlib.pos_in ic
 
+(* TODO: check limits *)
+let input_bytes ((_, ic) : t) buf pos len : bytes = Stdlib.really_input ic buf pos len; buf
 let input_byte ((_, ic) : t) : int = Stdlib.input_byte ic
 let input_binary_int ((_, ic) : t) : int = Stdlib.input_binary_int ic
 let input_fourcc ((_, ic) : t) : string = Stdlib.really_input_string ic 4

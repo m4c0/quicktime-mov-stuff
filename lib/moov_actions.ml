@@ -5,34 +5,34 @@ let print_single (tgt : target) ({ tp; offs; data } : Atoms.t) =
       Printf.printf "%s;%d" tp offs;
       match data with
       | Node _ -> print_newline ()
-      | Leaf s -> Printf.printf ";%d\n" s
+      | Leaf s -> Printf.printf ";%d\n" (Bytes.length s)
   )
   | Human ->
       Printf.printf "%s @%d" tp offs;
       match data with
       | Node x -> Printf.printf " children:%d\n" (List.length x)
-      | Leaf s -> Printf.printf " size:%d\n" s
+      | Leaf s -> Printf.printf " size:%d\n" (Bytes.length s)
 
 let current_file : string ref = ref "a.mov"
 
-let new_kid_on_the_block tp sz i l =
+let new_kid_on_the_block tp bs i l =
   let max_len res (a : Atoms.t) = max res (a.offs + Atoms.size_of a) in
   let offs = List.fold_left max_len i l in
-  let atom : Atoms.t = Atoms.make tp sz offs in
+  let atom : Atoms.t = Atoms.make tp bs offs in
   atom :: l
 
 (* *)
 
-let append fmt tp sz =
-  Moov_state.map_tree (new_kid_on_the_block tp sz 0)
+let append fmt tp bs =
+  Moov_state.map_tree (new_kid_on_the_block tp bs 0)
   |> List.hd
   |> print_single fmt
 
-let append_children fmt tp sz =
+let append_children fmt tp bs =
   let nkotb (a : Atoms.t) : Atoms.t Atoms.node =
     match a.data with
     | Leaf _ -> failwith "can't add children to leaf atoms"
-    | Node l -> Node (new_kid_on_the_block tp sz (a.offs + 8) l)
+    | Node l -> Node (new_kid_on_the_block tp bs (a.offs + 8) l)
   in
   let mapper (a : Atoms.t) = { a with data = nkotb a } in
   let _ = Moov_state.map_atom_at_cursor mapper in
@@ -111,7 +111,7 @@ let verify () =
     | Node children ->
       if children = [] then failwith (Printf.sprintf "expecting children at %d for %s" pos a.tp);
       List.fold_left checker 0 children
-    | Leaf s -> a.offs + s
+    | Leaf s -> a.offs + (Bytes.length s)
 
   in
   let file_size = try (Unix.stat !current_file).st_size with _ -> 0 in
@@ -129,7 +129,10 @@ let write_copy file =
     output_binary_int oc (Atoms.size_of a);
     output_string oc a.tp;
     match a.data with
-    | Leaf s -> while (pos_out oc < (a.offs + s)) do output_byte oc 0 done
+    | Leaf s ->
+        while (pos_out oc < (a.offs + (Bytes.length s))) do
+          output_byte oc 0
+        done
     | Node x -> List.iter w x
   in
   try

@@ -15,11 +15,12 @@ let run (str : string) =
   let trim = trimmed_substr str in
   let offs i = trim i |> ios "invalid offset" in
   let size i = trim i |> ios "invalid size" in
+  let bc = Bytes.create in
   match list_of_str str with
-  | 'a' :: ' ' :: a :: b :: c :: d :: ' ' :: _ -> append Machine (fourcc a b c d) (offs 7)
-  | 'A' :: ' ' :: a :: b :: c :: d :: ' ' :: _ -> append Human (fourcc a b c d) (offs 7)
-  | 'a' :: 'c' :: ' ' :: a :: b :: c :: d :: ' ' :: _ -> append_children Machine (fourcc a b c d) (offs 8)
-  | 'A' :: 'C' :: ' ' :: a :: b :: c :: d :: ' ' :: _ -> append_children Human (fourcc a b c d) (offs 8)
+  | 'a' :: ' ' :: a :: b :: c :: d :: ' ' :: _ -> append Machine (fourcc a b c d) (offs 7 |> bc)
+  | 'A' :: ' ' :: a :: b :: c :: d :: ' ' :: _ -> append Human (fourcc a b c d) (offs 7 |> bc)
+  | 'a' :: 'c' :: ' ' :: a :: b :: c :: d :: ' ' :: _ -> append_children Machine (fourcc a b c d) (offs 8 |> bc)
+  | 'A' :: 'C' :: ' ' :: a :: b :: c :: d :: ' ' :: _ -> append_children Human (fourcc a b c d) (offs 8 |> bc)
   | ['D'] -> dump ()
   | 'e' :: ' ' :: _ -> edit (trim 2)
   | 'E' :: ' ' :: _ -> edit (trim 2); print_tree ()
@@ -32,8 +33,8 @@ let run (str : string) =
   | ['p'; 'r'] -> print_roots Machine
   | ['P'; 'R'] -> print_roots Human
   | ['P'; 'T'] -> print_tree ()
-  | 'r' :: 's' :: ' ' :: _ -> replace_size Machine (size 3)
-  | 'R' :: 'S' :: ' ' :: _ -> replace_size Human (size 3)
+  | 'r' :: 's' :: ' ' :: _ -> replace_size Machine (size 3 |> bc)
+  | 'R' :: 'S' :: ' ' :: _ -> replace_size Human (size 3 |> bc)
   | ['r'; 't'; ' '; a; b; c; d] -> replace_type Machine (fourcc a b c d)
   | ['R'; 'T'; ' '; a; b; c; d] -> replace_type Human (fourcc a b c d)
   | ['s'] -> sort ()
@@ -48,11 +49,17 @@ let safe_run (str : string) =
   try run str
   with
   | Failure f
+  | Invalid_argument f
   | Sys_error f -> print_endline f
+  | x -> print_endline ("Unhandled error: " ^ (Printexc.to_string x))
+  
+let read_line_opt () =
+  try Some (read_line ())
+  with End_of_file -> None 
 
 let rec repl () =
-  try
-    read_line () |> safe_run;
-    repl ()
-  with End_of_file -> ()
-
+  match read_line_opt () with
+  | None -> ()
+  | Some line -> (
+    safe_run line; repl()
+  )
