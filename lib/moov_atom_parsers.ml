@@ -1,37 +1,30 @@
-let elst (ic : Subchannel.t) =
-  let sz = Subchannel.input_binary_int ic in
-  let tp = Subchannel.input_fourcc ic in
-  Printf.printf "Size: %d - Type: [%s]" sz tp;
-  print_string " - Version: ";
-  Subchannel.input_byte ic |> print_int;
-  print_string " - Flags: ";
-  Subchannel.input_byte ic |> print_int;
-  Subchannel.input_byte ic |> print_int;
-  Subchannel.input_byte ic |> print_int;
-  print_newline ();
+let elst (b : bytes) =
+  Printf.printf
+    "Version: %d - Flags: %d %d %d\n"
+    (Bytes.get_int8 b 0)
+    (Bytes.get_int8 b 1)
+    (Bytes.get_int8 b 2)
+    (Bytes.get_int8 b 3)
+    ;
 
-  let num_entries = Subchannel.input_binary_int ic in
+  let num_entries = Bytes.get_int32_be b 4 |> Int32.to_int in
   Printf.printf "Entries: %d\n" num_entries;
 
   for _ = 1 to num_entries do
-    let d = Subchannel.input_binary_int ic in
-    let i = Subchannel.input_binary_int ic in
-    let r = Subchannel.input_binary_int ic in
+    let d = Bytes.get_int32_be b 8 |> Int32.to_int in
+    let i = Bytes.get_int32_be b 12 |> Int32.to_int in
+    let r = Bytes.get_int32_be b 16 |> Int32.to_int in
     let fr = (float_of_int r) /. 65536.0 in
     Printf.printf "  Duration: %d - Time: %d - Rate: %f\n" d i fr
   done
 
-let hexdump (ic : Subchannel.t) =
-  let rec dump_bytes n ic =
+let hexdump (b : bytes) =
+  for n = 0 to (Bytes.length b) do
     let idx = n mod 16 in
-    if n < (Subchannel.limit_of ic) then begin
-      Printf.printf "%02x" (Subchannel.input_byte ic);
-      print_string (match idx with 7 -> "    " | 15 -> "\n" | _ -> " ");
-      dump_bytes (n + 1) ic
-    end
-    else if idx < 15 then print_newline ()
-  in
-  dump_bytes 0 ic
+    Printf.printf "%02x" (Bytes.get_int8 b n);
+    print_string (match idx with 7 -> "    " | 15 -> "\n" | _ -> " ");
+  done;
+  print_newline ()
   
 let parser_of = function
   | "elst" -> elst

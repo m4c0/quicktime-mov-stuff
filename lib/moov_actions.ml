@@ -44,11 +44,9 @@ let append_children fmt tp bs =
 let dump () =
   let a = Moov_state.atom_at_cursor() in
   let fn = Moov_atom_parsers.parser_of a.tp in
-  let extract ic =
-    Subchannel.seek_in ic a.offs;
-    Subchannel.limit_by ic (Atoms.size_of a) |> fn
-  in
-  Subchannel.open_with extract !current_file
+  match a.data with
+  | Node _ -> failwith (a.tp ^ ": can't dump atoms with children")
+  | Leaf b -> fn b
 
 let edit file =
   let new_list = Moov_state.map_tree (fun _ -> Atoms.from_file file) in
