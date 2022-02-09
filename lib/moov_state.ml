@@ -5,9 +5,10 @@ let atom_at_opt o : Atoms.t option =
   let rec mapper (a : Atoms.t) =
     if a.offs == o
     then Some a
-    else if (List.length a.children) > 0
-    then List.find_map mapper a.children
-    else None
+    else 
+      match a.data with
+      | Leaf -> None
+      | Node l -> List.find_map mapper l
   in
   List.find_map mapper !atom_tree
 
@@ -20,7 +21,10 @@ let map_atom_at_cursor fn =
   let rec repl (a : Atoms.t) =
     if !cursor = a.offs
     then fn a
-    else { a with children = List.map repl a.children }
+    else
+      match a.data with
+      | Leaf -> a
+      | Node l -> { a with data = Node (List.map repl l) }
   in
   atom_tree := List.map repl !atom_tree
 

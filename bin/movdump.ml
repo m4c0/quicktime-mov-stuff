@@ -3,11 +3,13 @@ let chunk_like_table_skip = function
   | "stsd" -> Some(8)
   | _ -> None
 
-let rec dump_atom indent ({ tp; sz; children; _ } : QTFF.Atoms.t) =
+let rec dump_atom indent ({ tp; sz; data; _ } : QTFF.Atoms.t) =
   let ni = "     " ^ indent in
   let r = dump_atom ni in
   Printf.printf "%s%s -- %d bytes\n" indent tp sz;
-  List.iter r children
+  match data with
+  | Leaf -> ()
+  | Node l -> List.iter r l
   
 let dump file =
   QTFF.Atoms.from_file file
