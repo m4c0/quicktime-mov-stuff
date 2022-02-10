@@ -2,31 +2,29 @@ let atom_tree : Atoms.t list ref = ref []
 let cursor : int ref = ref 0
 
 let atom_at_opt o : Atoms.t option =
-  let rec mapper (a : Atoms.t) =
-    if a.offs == o
-    then Some a
-    else 
-      match a.data with
-      | Leaf _ -> None
-      | Node l -> List.find_map mapper l
+  let rec fn offs (l : Atoms.t list) =
+    match l with
+    | [] -> None
+    | a :: _ when o == offs -> Some a
+    | { data = Leaf b; _ } :: ll -> fn (offs + 8 + (Bytes.length b)) ll
+    | { data = Node n; _ } :: ll -> fn (offs + 8) (n @ ll)
   in
-  List.find_map mapper !atom_tree
+  fn 0 !atom_tree
 
 let atom_at_cursor () =
   match atom_at_opt !cursor with
   | None -> failwith "Cursor at invalid position"
   | Some a -> a
 
-let map_atom_at_cursor fn =
-  let rec repl (a : Atoms.t) =
-    if !cursor = a.offs
-    then fn a
-    else
-      match a.data with
-      | Leaf _ -> a
-      | Node l -> { a with data = Node (List.map repl l) }
+let map_atom_at_cursor (fn : Atoms.t -> Atoms.t) =
+  let rec f (offs : int) (l : Atoms.t list) =
+    match l with
+    | [] -> []
+    | a :: ll when !cursor == offs -> (fn a) :: ll
+    | { data = Leaf b; _ } as a :: ll -> a :: f (offs + 8 + (Bytes.length b)) ll
+    | { data = Node n; _ } as a :: ll -> a :: f (offs + 8) (n @ ll)
   in
-  atom_tree := List.map repl !atom_tree
+  atom_tree := f 0 !atom_tree
 
 let move_cursor o =
   match atom_at_opt o with

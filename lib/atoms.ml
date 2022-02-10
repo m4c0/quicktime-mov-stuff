@@ -4,7 +4,6 @@ type 'a node =
 
 type t = {
   tp : string;
-  offs : int; (* TODO: automatic offset - requires some form of ordering *)
   data : t node;
 }
 
@@ -26,20 +25,19 @@ let is_recursive = function
   | "tref" -> true
   | _ -> false
 
-let make tp bs offs : t =
+let make tp bs : t =
   if is_recursive tp
-  then { tp; offs; data = Node [] }
-  else { tp; offs; data = Leaf bs }
+  then { tp; data = Node [] }
+  else { tp; data = Leaf bs }
 
 let rec size_of (a : t) : int =
   match a.data with
-  | Leaf s -> Bytes.length s
+  | Leaf s -> 8 + Bytes.length s
   | Node l ->
       let folder acc a = acc + (size_of a) in
       List.fold_left folder 8 l
 
 let rec unsafe_atom_from_channel ic : t =
-  let offs = Subchannel.pos_in ic in
   let sz = -8 +
     match Subchannel.input_binary_int ic with 
     | 0 -> Subchannel.limit_of ic
@@ -54,7 +52,7 @@ let rec unsafe_atom_from_channel ic : t =
     else Leaf (Subchannel.input_bytes lic (Bytes.create sz) 0 sz)
   in
   Subchannel.seek_in_end lic;
-  { tp; offs; data }
+  { tp; data }
 and atom_from_channel ic : t option =
   if Subchannel.is_empty ic
   then None
@@ -67,15 +65,13 @@ and from_channel (ic : Subchannel.t) : t list =
 let from_file (file : string) : t list =
   Subchannel.open_with from_channel file
 
-let print_csv ({ tp; offs; data } : t) =
-  Printf.printf "%s;%d" tp offs;
+let print_csv ({ tp; data } : t) =
   match data with
   | Node _ -> print_newline ()
-  | Leaf s -> Printf.printf ";%d\n" (Bytes.length s)
+  | Leaf s -> Printf.printf "%s;%d\n" tp (Bytes.length s)
 
-let print ({ tp; offs; data } : t) =
-  Printf.printf "%s @%d" tp offs;
+let print ({ tp; data } : t) =
   match data with
-  | Node x -> Printf.printf " children:%d\n" (List.length x)
-  | Leaf s -> Printf.printf " size:%d\n" (Bytes.length s)
+  | Node x -> Printf.printf "%s children:%d\n" tp (List.length x)
+  | Leaf s -> Printf.printf "%s size:%d\n" tp (Bytes.length s)
 

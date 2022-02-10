@@ -1,16 +1,12 @@
 let current_file : string ref = ref "a.mov"
 let printer : (Atoms.t -> unit) ref = ref Atoms.print_csv
 
-let new_kid_on_the_block tp bs i l =
-  let max_len res (a : Atoms.t) = max res (a.offs + Atoms.size_of a) in
-  let offs = List.fold_left max_len i l in
-  let atom : Atoms.t = Atoms.make tp bs offs in
-  atom :: l
+let new_kid_on_the_block tp bs l = List.append l [Atoms.make tp bs]
 
 (* *)
 
 let append tp bs =
-  Moov_state.map_tree (new_kid_on_the_block tp bs 0)
+  Moov_state.map_tree (new_kid_on_the_block tp bs)
   |> List.hd
   |> !printer
 
@@ -18,7 +14,7 @@ let append_children tp bs =
   let nkotb (a : Atoms.t) : Atoms.t Atoms.node =
     match a.data with
     | Leaf _ -> failwith "can't add children to leaf atoms"
-    | Node l -> Node (new_kid_on_the_block tp bs (a.offs + 8) l)
+    | Node l -> Node (new_kid_on_the_block tp bs l)
   in
   let mapper (a : Atoms.t) = { a with data = nkotb a } in
   let _ = Moov_state.map_atom_at_cursor mapper in
@@ -77,46 +73,13 @@ let replace_type fourcc =
   Moov_state.map_atom_at_cursor (fun a -> { a with tp = fourcc });
   Moov_state.atom_at_cursor () |> !printer 
 
-let sort () =
-  let by_offs ({ offs = oa; _ } : Atoms.t) ({ offs = ob; _ } : Atoms.t) = compare oa ob; in
-  let rec sort_kids (a : Atoms.t) =
-    match a.data with
-    | Leaf _ -> a
-    | Node x -> { a with data = Node (rec_sort x) }
-  and rec_sort a : Atoms.t list = a |> List.sort by_offs |> List.map sort_kids in
-  Moov_state.map_tree rec_sort |> ignore
-
-let verify () =
-  let rec checker pos (a : Atoms.t) =
-    if pos > a.offs
-    then failwith (Printf.sprintf "expecting offset %d for %s but got %d" pos a.tp a.offs);
-
-    match a.data with
-    | Node children ->
-      if children = [] then failwith (Printf.sprintf "expecting children at %d for %s" pos a.tp);
-      List.fold_left checker 0 children
-    | Leaf s -> a.offs + (Bytes.length s)
-
-  in
-  let file_size = try (Unix.stat !current_file).st_size with _ -> 0 in
-  let tree_size = Moov_state.fold_tree checker 0 in
-  if file_size = tree_size
-  then Printf.printf "file size is %d\n" file_size
-  else if file_size < tree_size
-  then Printf.printf "file size will grow - disk: %d - tree: %d\n" file_size tree_size
-  else Printf.printf "atoms are not covering the whole file - disk: %d - tree %d\n" file_size tree_size
-
 let write_copy file =
   let oc = open_out_gen [Open_wronly; Open_creat; Open_binary] 0o666 file in
   let rec w (a : Atoms.t) =
-    seek_out oc a.offs;
     output_binary_int oc (Atoms.size_of a);
     output_string oc a.tp;
     match a.data with
-    | Leaf s ->
-        while (pos_out oc < (a.offs + (Bytes.length s))) do
-          output_byte oc 0
-        done
+    | Leaf s -> output_bytes oc s
     | Node x -> List.iter w x
   in
   try
