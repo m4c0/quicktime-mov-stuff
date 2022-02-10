@@ -1,9 +1,5 @@
-type target = Machine | Human
-
 let current_file : string ref = ref "a.mov"
 let printer : (Atoms.t -> unit) ref = ref Atoms.print_csv
-
-let print_single _ (a : Atoms.t) = !printer a
 
 let new_kid_on_the_block tp bs i l =
   let max_len res (a : Atoms.t) = max res (a.offs + Atoms.size_of a) in
@@ -13,12 +9,12 @@ let new_kid_on_the_block tp bs i l =
 
 (* *)
 
-let append fmt tp bs =
+let append tp bs =
   Moov_state.map_tree (new_kid_on_the_block tp bs 0)
   |> List.hd
-  |> print_single fmt
+  |> !printer
 
-let append_children fmt tp bs =
+let append_children tp bs =
   let nkotb (a : Atoms.t) : Atoms.t Atoms.node =
     match a.data with
     | Leaf _ -> failwith "can't add children to leaf atoms"
@@ -29,7 +25,7 @@ let append_children fmt tp bs =
   let ({ data; _ } : Atoms.t) = Moov_state.atom_at_cursor () in
   match data with
   | Leaf _ -> failwith "this should neve happen"
-  | Node l -> l |> List.hd |> print_single fmt
+  | Node l -> l |> List.hd |> !printer
 
 let dump () =
   let a = Moov_state.atom_at_cursor() in
@@ -45,41 +41,41 @@ let edit file =
   current_file := file;
   Printf.printf "%d\n" len
 
-let jump fmt offs = Moov_state.move_cursor offs |> print_single fmt
+let jump offs = Moov_state.move_cursor offs |> !printer
 
-let print fmt = 
-  Moov_state.atom_at_cursor () |> print_single fmt 
+let print () = 
+  Moov_state.atom_at_cursor () |> !printer 
 
-let print_children fmt =
+let print_children () =
   let a = Moov_state.atom_at_cursor () in
   match a.data with
   | Leaf _ -> failwith (a.tp ^ ": does not contain children")
-  | Node x -> List.iter (print_single fmt) x
+  | Node x -> List.iter !printer x
 
-let print_roots fmt = Moov_state.iter_tree (print_single fmt)
+let print_roots () = Moov_state.iter_tree !printer
 
 let print_tree () =
   let rec r i (a : Atoms.t) =
     print_string i;
-    print_single Human a;
+    !printer a;
     match a.data with
     | Leaf _ -> ()
     | Node x -> List.iter (r ("     " ^ i)) x
   in
   Moov_state.iter_tree (r "")
 
-let replace_size fmt len =
+let replace_size len =
   let fn (a : Atoms.t) : Atoms.t =
     match a.data with
     | Leaf _ -> { a with data = Leaf len }
     | Node _ -> failwith (a.tp ^ ": size is defined by its children")
   in
   Moov_state.map_atom_at_cursor fn;
-  Moov_state.atom_at_cursor () |> print_single fmt 
+  Moov_state.atom_at_cursor () |> !printer 
 
-let replace_type fmt fourcc =
+let replace_type fourcc =
   Moov_state.map_atom_at_cursor (fun a -> { a with tp = fourcc });
-  Moov_state.atom_at_cursor () |> print_single fmt 
+  Moov_state.atom_at_cursor () |> !printer 
 
 let sort () =
   let by_offs ({ offs = oa; _ } : Atoms.t) ({ offs = ob; _ } : Atoms.t) = compare oa ob; in

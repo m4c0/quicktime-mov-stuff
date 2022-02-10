@@ -17,32 +17,22 @@ let run (str : string) =
   let size i = trim i |> ios "invalid size" in
   let bc = Bytes.create in
   match list_of_str str with
-  | 'a' :: ' ' :: a :: b :: c :: d :: ' ' :: _ -> append Machine (fourcc a b c d) (offs 7 |> bc)
-  | 'A' :: ' ' :: a :: b :: c :: d :: ' ' :: _ -> append Human (fourcc a b c d) (offs 7 |> bc)
-  | 'a' :: 'c' :: ' ' :: a :: b :: c :: d :: ' ' :: _ -> append_children Machine (fourcc a b c d) (offs 8 |> bc)
-  | 'A' :: 'C' :: ' ' :: a :: b :: c :: d :: ' ' :: _ -> append_children Human (fourcc a b c d) (offs 8 |> bc)
-  | ['D'] -> dump ()
+  | 'a' :: ' ' :: a :: b :: c :: d :: ' ' :: _ -> append (fourcc a b c d) (offs 7 |> bc)
+  | 'a' :: 'c' :: ' ' :: a :: b :: c :: d :: ' ' :: _ -> append_children (fourcc a b c d) (offs 8 |> bc)
+  | ['d'] -> dump ()
   | 'e' :: ' ' :: _ -> edit (trim 2)
-  | 'E' :: ' ' :: _ -> edit (trim 2); print_tree ()
-  | 'j' :: ' ' :: _ -> jump Machine (offs 2)
-  | 'J' :: ' ' :: _ -> jump Human (offs 2)
-  | ['p'] -> print Machine
-  | ['P'] -> print Human
-  | ['p'; 'c'] -> print_children Machine
-  | ['P'; 'C'] -> print_children Human
-  | ['p'; 'r'] -> print_roots Machine
-  | ['P'; 'R'] -> print_roots Human
-  | ['P'; 'T'] -> print_tree ()
-  | 'r' :: 's' :: ' ' :: _ -> replace_size Machine (size 3 |> bc)
-  | 'R' :: 'S' :: ' ' :: _ -> replace_size Human (size 3 |> bc)
-  | ['r'; 't'; ' '; a; b; c; d] -> replace_type Machine (fourcc a b c d)
-  | ['R'; 'T'; ' '; a; b; c; d] -> replace_type Human (fourcc a b c d)
+  | 'j' :: ' ' :: _ -> jump (offs 2)
+  | 'J' :: ' ' :: _ -> jump (offs 2)
+  | ['p'] -> print ()
+  | ['p'; 'c'] -> print_children ()
+  | ['p'; 'r'] -> print_roots ()
+  | ['p'; 't'] -> print_tree ()
+  | 'r' :: 's' :: ' ' :: _ -> replace_size (size 3 |> bc)
+  | ['r'; 't'; ' '; a; b; c; d] -> replace_type (fourcc a b c d)
   | ['s'] -> sort ()
-  | ['V'] -> verify ()
+  | ['v'] -> verify ()
   | ['w'] -> write ()
   | 'w' :: ' ' :: _ -> write_copy (trim 2)
-  | ['W'] -> verify (); write ()
-  | 'W' :: ' ' :: _ -> verify (); write_copy (trim 2)
   | _ -> print_endline "?"
 
 let safe_run (str : string) =
