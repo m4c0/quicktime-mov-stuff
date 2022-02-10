@@ -10,8 +10,6 @@ let ios (msg : string) (str : string) : int =
   try int_of_string str
   with _ -> failwith (str ^ ": " ^ msg)
 
-let last_cmd = ref ""
-
 open Moov_actions
 let run (str : string) =
   let trim = trimmed_substr str in
@@ -39,27 +37,7 @@ let run (str : string) =
   | 'w' :: ' ' :: _ -> write_copy (trim 2)
   | _ -> print_endline "?"
 
-let safe_run (str : string) =
-  try 
-    run str;
-    last_cmd := str
-  with
-  | Failure f
-  | Invalid_argument f
-  | Sys_error f -> print_endline f
-  | x -> print_endline ("Unhandled error: " ^ (Printexc.to_string x))
-  
-let read_line_opt () =
-  try Some (read_line ())
-  with End_of_file -> None 
-
 let repl () =
-  let rec loop () =
-    match read_line_opt () with
-    | None -> ()
-    | Some "" -> (safe_run !last_cmd; loop())
-    | Some line -> (safe_run line; loop())
-  in
   let batch = ref false in
   let speclist = [
     ("-b", Arg.Set batch, "Batch mode - emits all output in a computer-friendly way")
@@ -68,5 +46,5 @@ let repl () =
   let usage_msg = Sys.argv.(0) ^ " [-b]" in
   Arg.parse speclist anon_fn usage_msg;
   Moov_actions.printer := if !batch then Atoms.print_csv else Atoms.print;
-  loop ();
+  Repl.repl run;
 
