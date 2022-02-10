@@ -66,3 +66,16 @@ and from_channel (ic : Subchannel.t) : t list =
 
 let from_file (file : string) : t list =
   Subchannel.open_with from_channel file
+
+let print_csv ({ tp; offs; data } : t) =
+  Printf.printf "%s;%d" tp offs;
+  match data with
+  | Node _ -> print_newline ()
+  | Leaf s -> Printf.printf ";%d\n" (Bytes.length s)
+
+let print ({ tp; offs; data } : t) =
+  Printf.printf "%s @%d" tp offs;
+  match data with
+  | Node x -> Printf.printf " children:%d\n" (List.length x)
+  | Leaf s -> Printf.printf " size:%d\n" (Bytes.length s)
+

@@ -1,19 +1,9 @@
 type target = Machine | Human
-let print_single (tgt : target) ({ tp; offs; data } : Atoms.t) =
-  match tgt with
-  | Machine -> (
-      Printf.printf "%s;%d" tp offs;
-      match data with
-      | Node _ -> print_newline ()
-      | Leaf s -> Printf.printf ";%d\n" (Bytes.length s)
-  )
-  | Human ->
-      Printf.printf "%s @%d" tp offs;
-      match data with
-      | Node x -> Printf.printf " children:%d\n" (List.length x)
-      | Leaf s -> Printf.printf " size:%d\n" (Bytes.length s)
 
 let current_file : string ref = ref "a.mov"
+let printer : (Atoms.t -> unit) ref = ref Atoms.print_csv
+
+let print_single _ (a : Atoms.t) = !printer a
 
 let new_kid_on_the_block tp bs i l =
   let max_len res (a : Atoms.t) = max res (a.offs + Atoms.size_of a) in

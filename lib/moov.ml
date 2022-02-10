@@ -57,9 +57,19 @@ let read_line_opt () =
   try Some (read_line ())
   with End_of_file -> None 
 
-let rec repl () =
-  match read_line_opt () with
-  | None -> ()
-  | Some line -> (
-    safe_run line; repl()
-  )
+let repl () =
+  let rec loop () =
+    match read_line_opt () with
+    | None -> ()
+    | Some line -> (safe_run line; loop())
+  in
+  let batch = ref false in
+  let speclist = [
+    ("-b", Arg.Set batch, "Batch mode - emits all output in a computer-friendly way")
+  ] in
+  let anon_fn x = failwith ("Unknown argument: " ^ x) in
+  let usage_msg = Sys.argv.(0) ^ " [-b]" in
+  Arg.parse speclist anon_fn usage_msg;
+  Moov_actions.printer := if !batch then Atoms.print_csv else Atoms.print;
+  loop ();
+
