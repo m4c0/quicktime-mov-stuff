@@ -1,3 +1,9 @@
+type move_type =
+  | Absolute of int
+  | Relative of int
+  | Inwards
+  | Outwards
+  
 let atom_tree : Atoms.t list ref = ref []
 let cursor : int list ref = ref [ 0 ]
 
@@ -27,8 +33,16 @@ let map_atom_at_cursor (fn : Atoms.t -> Atoms.t) =
   let rcur = List.rev !cursor in
   atom_tree := List.mapi (rfn rcur) !atom_tree
 
-let move_cursor idx =
-  let nc = idx :: (List.tl !cursor) in
+let move_cursor (mt : move_type) =
+  let hd = List.hd !cursor in
+  let tl = List.tl !cursor in
+  let nc = 
+    match mt with
+    | Absolute idx -> idx :: tl
+    | Relative idx -> (hd + idx) :: tl
+    | Inwards -> 0 :: !cursor
+    | Outwards -> List.tl !cursor
+  in
   try
     let a = atom_at nc in
     cursor := nc;

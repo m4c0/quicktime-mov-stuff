@@ -2,6 +2,7 @@ let current_file : string ref = ref "a.mov"
 let printer : (Atoms.t -> unit) ref = ref Atoms.print_csv
 
 let new_kid_on_the_block tp bs l = List.append l [Atoms.make tp bs]
+let move mt = Moov_state.move_cursor mt |> !printer
 
 (* *)
 
@@ -34,11 +35,11 @@ let dump () =
 let edit file =
   let new_list = Moov_state.map_tree (fun _ -> Atoms.from_file file) in
   let len = List.length new_list in
-  if len > 0 then Moov_state.move_cursor 0 |> ignore;
+  if len > 0 then Moov_state.move_cursor (Absolute 0) |> ignore;
   current_file := file;
   Printf.printf "%d\n" len
 
-let jump offs = Moov_state.move_cursor offs |> !printer
+let jump offs = move (Absolute offs)
 
 let print () = 
   Moov_state.atom_at_cursor () |> !printer 
@@ -74,10 +75,10 @@ let replace_type fourcc =
   Moov_state.map_atom_at_cursor (fun a -> { a with tp = fourcc });
   Moov_state.atom_at_cursor () |> !printer 
 
-let step () = ()
-let step_back () = ()
-let step_in () = ()
-let step_out () = ()
+let step () = move (Relative 1)
+let step_back () = move (Relative (-1))
+let step_in () = move Inwards 
+let step_out () = move Outwards 
 
 let write_copy file =
   let oc = open_out_gen [Open_wronly; Open_creat; Open_binary] 0o666 file in
