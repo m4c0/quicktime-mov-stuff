@@ -10,6 +10,8 @@ let ios (msg : string) (str : string) : int =
   try int_of_string str
   with _ -> failwith (str ^ ": " ^ msg)
 
+let last_cmd = ref ""
+
 open Moov_actions
 let run (str : string) =
   let trim = trimmed_substr str in
@@ -38,7 +40,9 @@ let run (str : string) =
   | _ -> print_endline "?"
 
 let safe_run (str : string) =
-  try run str
+  try 
+    run str;
+    last_cmd := str
   with
   | Failure f
   | Invalid_argument f
@@ -53,6 +57,7 @@ let repl () =
   let rec loop () =
     match read_line_opt () with
     | None -> ()
+    | Some "" -> (safe_run !last_cmd; loop())
     | Some line -> (safe_run line; loop())
   in
   let batch = ref false in
