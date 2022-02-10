@@ -7,6 +7,7 @@ let new_kid_on_the_block tp bs l = List.append l [Atoms.make tp bs]
 
 let append tp bs =
   Moov_state.map_tree (new_kid_on_the_block tp bs)
+  |> List.rev
   |> List.hd
   |> !printer
 
@@ -21,7 +22,7 @@ let append_children tp bs =
   let ({ data; _ } : Atoms.t) = Moov_state.atom_at_cursor () in
   match data with
   | Leaf _ -> failwith "this should neve happen"
-  | Node l -> l |> List.hd |> !printer
+  | Node l -> l |> List.rev |> List.hd |> !printer
 
 let dump () =
   let a = Moov_state.atom_at_cursor() in
