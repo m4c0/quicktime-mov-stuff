@@ -29,6 +29,10 @@ let run (str : string) =
   | ['p'; 't'] -> print_tree ()
   | 'r' :: 's' :: ' ' :: _ -> replace_size (size 3 |> bc)
   | ['r'; 't'; ' '; a; b; c; d] -> replace_type (fourcc a b c d)
+  | ['s'] -> step ()
+  | ['S'] -> step_back ()
+  | ['s'; 'i'] -> step_in ()
+  | ['s'; 'o'] -> step_out ()
   | ['w'] -> write ()
   | 'w' :: ' ' :: _ -> write_copy (trim 2)
   | _ -> print_endline "?"

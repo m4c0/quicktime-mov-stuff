@@ -74,6 +74,11 @@ let replace_type fourcc =
   Moov_state.map_atom_at_cursor (fun a -> { a with tp = fourcc });
   Moov_state.atom_at_cursor () |> !printer 
 
+let step () = ()
+let step_back () = ()
+let step_in () = ()
+let step_out () = ()
+
 let write_copy file =
   let oc = open_out_gen [Open_wronly; Open_creat; Open_binary] 0o666 file in
   let rec w (a : Atoms.t) =
