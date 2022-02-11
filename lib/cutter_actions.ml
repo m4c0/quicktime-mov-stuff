@@ -13,7 +13,8 @@ let duration_of_tkhd tkhd = i32 tkhd 20
 
 let track_of_trak trak : track =
   let dur = Atoms.find_leaf_atom "tkhd" trak |> duration_of_tkhd in
-  { dur }
+  let media = Atoms.find_node_atom "mdia" trak |> Atoms.find_leaf_atom "mdhd" |> header_of_mvhd in
+  { dur; media }
 
 let movie_from_moov moov : movie =
   let mvhd = Atoms.find_leaf_atom "mvhd" moov |> header_of_mvhd in
