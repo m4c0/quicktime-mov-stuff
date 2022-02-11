@@ -75,3 +75,18 @@ let print ({ tp; data } : t) =
   | Node x -> Printf.printf "%s children:%d\n" tp (List.length x)
   | Leaf s -> Printf.printf "%s size:%d\n" tp (Bytes.length s)
 
+let leaf_from ({ data; tp } : t) =
+  match data with
+  | Node _ -> failwith (tp ^ ": is not a leaf atom")
+  | Leaf x -> x
+
+let node_from ({ data; tp } : t) =
+  match data with
+  | Leaf _ -> failwith (tp ^ ": is not a node atom")
+  | Node x -> x
+
+let has_tp fourcc ({ tp; _ } : t) = tp = fourcc
+let find_leaf_atom fourcc (l : t list) = List.find (has_tp fourcc) l |> leaf_from
+let find_node_atom fourcc (l : t list) = List.find (has_tp fourcc) l |> node_from
+let find_all_node_atoms fourcc (l : t list) = List.find_all (has_tp fourcc) l |> List.map node_from
+
