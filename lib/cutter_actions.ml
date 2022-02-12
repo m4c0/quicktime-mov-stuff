@@ -54,3 +54,7 @@ let load file =
   let m = Atoms.find_node_atom "moov" !tree |> movie_from_moov in
   Cutter_debug.movie m
 
+let play () =
+  Atoms.to_file "/tmp/m4c0.cutter.test.mov" !tree;
+  Unix.system "open /tmp/m4c0.cutter.test.mov" |> ignore;
+  print_endline "done"

@@ -81,19 +81,10 @@ let step_in () = move Inwards
 let step_out () = move Outwards 
 
 let write_copy file =
-  let oc = open_out_gen [Open_wronly; Open_creat; Open_binary] 0o666 file in
-  let rec w (a : Atoms.t) =
-    output_binary_int oc (Atoms.size_of a);
-    output_string oc a.tp;
-    match a.data with
-    | Leaf s -> output_bytes oc s
-    | Node x -> List.iter w x
+  let f atoms =
+    Atoms.to_file file atoms;
+    atoms
   in
-  try
-    Moov_state.iter_tree w;
-    close_out oc
-  with e ->
-    close_out_noerr oc;
-    raise e
+  Moov_state.map_tree f |> ignore
 
 let write () = write_copy !current_file

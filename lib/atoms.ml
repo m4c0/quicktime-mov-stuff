@@ -65,6 +65,22 @@ and from_channel (ic : Subchannel.t) : t list =
 let from_file (file : string) : t list =
   Subchannel.open_with from_channel file
 
+let to_file (file : string) (atoms : t list) : unit =
+  let oc = open_out_gen [Open_wronly; Open_creat; Open_binary] 0o666 file in
+  let rec w (a : t) =
+    output_binary_int oc (size_of a);
+    output_string oc a.tp;
+    match a.data with
+    | Leaf s -> output_bytes oc s
+    | Node x -> List.iter w x
+  in
+  try
+    List.iter w atoms;
+    close_out oc
+  with e ->
+    close_out_noerr oc;
+    raise e
+
 let print_csv ({ tp; data } : t) =
   match data with
   | Node _ -> print_newline ()
