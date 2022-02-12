@@ -1,24 +1,24 @@
-module type Scale = sig
+module Scale : sig
   type t = private int
   val of_int : int -> t
   val to_int : t -> int
-end
-module MediaScale : Scale = struct
+end = struct
   type t = int
   let of_int x = x
   let to_int x = x
 end
-module MovieScale : Scale = struct
-  type t = int
-  let of_int x = x
-  let to_int x = x
+module MediaScale = struct
+  include Scale
+end
+module MovieScale = struct
+  include Scale
 end
 
 type md_duration = { value: int; scale: MediaScale.t }
 type mv_duration = { value: int; scale: MovieScale.t }
 
 type edit = { dur: mv_duration; mtime: md_duration; mrate: float }
-type track = { tkhd: mv_duration; mdhd: md_duration; edts: edit list list }
+type track = { tkhd: mv_duration; mdhd: md_duration; edts: edit list }
 type movie = { mvhd: mv_duration; traks: track list }
 
 let time_of_vs value scale : int * int * int * int =

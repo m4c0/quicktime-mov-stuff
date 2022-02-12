@@ -41,7 +41,7 @@ let duration_of_tkhd mvhd tkhd : mv_duration = {
 let track_of_trak mvhd trak : track =
   let tkhd = Atoms.find_leaf_atom "tkhd" trak |> duration_of_tkhd mvhd in
   let mdhd = Atoms.find_node_atom "mdia" trak |> Atoms.find_leaf_atom "mdhd" |> header_of_mdhd in
-  let edts = Atoms.find_node_atom "edts" trak |> Atoms.find_all_leaf_atoms "elst" |> List.map (edit_of_elst mvhd mdhd) in
+  let edts = Atoms.find_node_atom "edts" trak |> Atoms.find_leaf_atom "elst" |> edit_of_elst mvhd mdhd in
   { tkhd; mdhd; edts }
 
 let movie_from_moov moov : movie =

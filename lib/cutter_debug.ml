@@ -20,7 +20,7 @@ let track (t : track) =
   print_endline "Track:";
   dur_mv "Duration" t.tkhd;
   dur_md "Media duration" t.mdhd;
-  List.iter (List.iter edit) t.edts
+  List.iter edit t.edts
 
 let movie (m : movie) =
   print_endline "Movie:";
