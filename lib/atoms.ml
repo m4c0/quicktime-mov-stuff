@@ -88,5 +88,6 @@ let node_from ({ data; tp } : t) =
 let has_tp fourcc ({ tp; _ } : t) = tp = fourcc
 let find_leaf_atom fourcc (l : t list) = List.find (has_tp fourcc) l |> leaf_from
 let find_node_atom fourcc (l : t list) = List.find (has_tp fourcc) l |> node_from
+let find_all_leaf_atoms fourcc (l : t list) = List.find_all (has_tp fourcc) l |> List.map leaf_from
 let find_all_node_atoms fourcc (l : t list) = List.find_all (has_tp fourcc) l |> List.map node_from
 
