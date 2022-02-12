@@ -6,13 +6,6 @@ let map_tree fn =
   let m = Atoms.find_node_atom "moov" !tree |> Cutter_parser.moov |> fn in
   Cutter_debug.movie m
 
-let add_md_dur (dur : md_duration) secs = 
-  let fn d s = d + (secs * s) in
-  MediaDuration.maps fn dur
-let add_mv_dur (dur : mv_duration) secs =
-  let fn d s = d + (secs * s) in
-  MovieDuration.maps fn dur
-
 let load file =
   tree := Atoms.from_file file;
   map_tree (fun x -> x)
@@ -20,7 +13,10 @@ let load file =
 let ltrim trk edt secs =
   let chg_edit i e : edit =
     if i = edt
-    then { e with dur = add_mv_dur e.dur (-secs); mtime = add_md_dur e.mtime secs }
+    then 
+      let dur = MovieDuration.maps (fun d s -> d - secs * s) e.dur in
+      let mtime = MediaDuration.maps (fun d s -> d + secs * s) e.mtime in
+      { e with dur; mtime }
     else e
   in
   let chg_trak i t : track =
