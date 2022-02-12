@@ -33,10 +33,9 @@ let edit_of_elst (mvhd : mv_duration) (mdhd : md_duration) elst : edit list =
   let qty = i32 elst 4 in
   entries qty |> List.rev
 
-let duration_of_tkhd mvhd tkhd : mv_duration = {
-  value = i32 tkhd 20;
-  scale = mvhd.scale
-}
+let duration_of_tkhd mvhd tkhd : mv_duration = 
+  let v = i32 tkhd 20 in
+  MovieDuration.with_value v mvhd
 
 let track_of_trak mvhd trak : track =
   let tkhd = Atoms.find_leaf_atom "tkhd" trak |> duration_of_tkhd mvhd in
@@ -49,9 +48,33 @@ let movie_from_moov moov : movie =
   let traks = Atoms.find_all_node_atoms "trak" moov |> List.map (track_of_trak mvhd) in
   { mvhd; traks }
 
+let add_md_dur (dur : md_duration) secs = 
+  let fn d s = d + (secs * s) in
+  MediaDuration.maps fn dur
+let add_mv_dur (dur : mv_duration) secs =
+  let fn d s = d + (secs * s) in
+  MovieDuration.maps fn dur
+
 let load file =
   tree := Atoms.from_file file;
   let m = Atoms.find_node_atom "moov" !tree |> movie_from_moov in
+  Cutter_debug.movie m
+
+let ltrim trk edt secs =
+  let chg_edit i e : edit =
+    if i = edt
+    then { e with dur = add_mv_dur e.dur (-secs); mtime = add_md_dur e.mtime secs }
+    else e
+  in
+  let chg_trak i t : track =
+    if i = trk
+    then { t with edts = List.mapi chg_edit t.edts }
+    else t
+  in
+  let chg_movie m =
+    { m with traks = List.mapi chg_trak m.traks }
+  in
+  let m = Atoms.find_node_atom "moov" !tree |> movie_from_moov |> chg_movie in
   Cutter_debug.movie m
 
 let play () =

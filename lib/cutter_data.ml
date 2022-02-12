@@ -1,21 +1,35 @@
-module Scale : sig
+module type Scale = sig
   type t = private int
   val of_int : int -> t
   val to_int : t -> int
-end = struct
+end
+module BaseScale : Scale = struct
   type t = int
   let of_int x = x
   let to_int x = x
 end
-module MediaScale = struct
-  include Scale
-end
-module MovieScale = struct
-  include Scale
+
+module Duration (S : Scale) = struct
+  type t = { value: int; scale: S.t }
+
+  let with_value (v : int) (tt : t) = { tt with value = v }
+  let maps (fn : int -> int -> int) (tt : t) =
+    let s = S.to_int tt.scale in
+    { tt with value = fn tt.value s }
 end
 
-type md_duration = { value: int; scale: MediaScale.t }
-type mv_duration = { value: int; scale: MovieScale.t }
+module MediaScale : Scale = struct
+  include BaseScale
+end
+module MediaDuration = Duration(MediaScale)
+
+module MovieScale : Scale = struct
+  include BaseScale
+end
+module MovieDuration = Duration(MovieScale)
+
+type md_duration = MediaDuration.t
+type mv_duration = MovieDuration.t
 
 type edit = { dur: mv_duration; mtime: md_duration; mrate: float }
 type track = { tkhd: mv_duration; mdhd: md_duration; edts: edit list }
