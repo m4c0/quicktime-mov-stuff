@@ -68,11 +68,18 @@ let ltrim trk edt secs =
   in
   let chg_trak i t : track =
     if i = trk
-    then { t with edts = List.mapi chg_edit t.edts }
+    then 
+      let edts = List.mapi chg_edit t.edts in
+      let dur_of (e : edit) = e.dur in
+      let tkhd = List.map dur_of edts |> MovieDuration.sum_all in
+      { t with tkhd; edts }
     else t
   in
   let chg_movie m =
-    { m with traks = List.mapi chg_trak m.traks }
+    let traks = List.mapi chg_trak m.traks in
+    let dur_of (t : track) = t.tkhd in
+    let mvhd = List.map dur_of traks |> MovieDuration.max_of in
+    { mvhd; traks }
   in
   let m = Atoms.find_node_atom "moov" !tree |> movie_from_moov |> chg_movie in
   Cutter_debug.movie m

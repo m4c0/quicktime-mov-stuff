@@ -12,10 +12,33 @@ end
 module Duration (S : Scale) = struct
   type t = { value: int; scale: S.t }
 
-  let with_value (v : int) (tt : t) = { tt with value = v }
+  let scale_of ({ scale; _ } : t) = S.to_int scale
+
   let maps (fn : int -> int -> int) (tt : t) =
     let s = S.to_int tt.scale in
     { tt with value = fn tt.value s }
+
+  let fold_left fn (l : t list) : t =
+    let hd = List.hd l in
+    let tl = List.tl l in
+    List.fold_left fn hd tl
+
+  let max_of (l : t list) : t =
+    let max (a : t) (b : t) = 
+      if a.value / scale_of a > b.value / scale_of b
+      then a
+      else b
+    in
+    fold_left max l
+
+  let sum_all (l : t list) : t =
+    let sum (a : t) (b : t) = {
+      value = (a.value * (scale_of b) / (scale_of a));
+      scale = b.scale;
+    } in
+    fold_left sum l
+
+  let with_value (v : int) (tt : t) = { tt with value = v }
 end
 
 module MediaScale : Scale = struct
