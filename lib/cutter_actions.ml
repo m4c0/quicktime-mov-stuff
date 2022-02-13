@@ -2,13 +2,9 @@ open Cutter_data
 
 let tree : Atoms.t list ref = ref []
 
-let map_tree fn =
-  let m = Atoms.find_node_atom "moov" !tree |> Cutter_parser.moov |> fn in
-  Cutter_debug.movie m
-
 let load file =
   tree := Atoms.from_file file;
-  map_tree (fun x -> x)
+  Cutter_parser.tree !tree |> Cutter_debug.movie
 
 let ltrim trk edt secs =
   let chg_edit i e : edit =
@@ -34,7 +30,9 @@ let ltrim trk edt secs =
     let mvhd = List.map dur_of traks |> MovieDuration.max_of in
     { mvhd; traks }
   in
-  map_tree chg_movie
+  let t = !tree in
+  tree := Cutter_parser.tree t |> chg_movie |> Cutter_writer.tree t;
+  Cutter_parser.tree !tree |> Cutter_debug.movie
 
 let play () =
   Atoms.to_file "/tmp/m4c0.cutter.test.mov" !tree;

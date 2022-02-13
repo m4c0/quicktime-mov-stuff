@@ -7,6 +7,9 @@ type t = {
   data : t node;
 }
 
+let leaf_of x = Leaf(x)
+let node_of x = Node(x)
+
 let is_recursive = function
   | "clip"
   | "dinf"
@@ -106,4 +109,33 @@ let find_leaf_atom fourcc (l : t list) = List.find (has_tp fourcc) l |> leaf_fro
 let find_node_atom fourcc (l : t list) = List.find (has_tp fourcc) l |> node_from
 let find_all_leaf_atoms fourcc (l : t list) = List.find_all (has_tp fourcc) l |> List.map leaf_from
 let find_all_node_atoms fourcc (l : t list) = List.find_all (has_tp fourcc) l |> List.map node_from
+
+let map_atom fourcc fn (l : t list) =
+  let mapper a = if has_tp fourcc a then { a with data = fn a } else a in
+  List.map mapper l
+
+let map_leaf_atom fourcc (fn : bytes -> bytes) =
+  let f x = x |> leaf_from |> fn |> leaf_of in
+  map_atom fourcc f
+
+let map_node_atom fourcc (fn : t list -> t list) =
+  let f x = x |> node_from |> fn |> node_of in
+  map_atom fourcc f
+
+let rec map_atoms fourcc fn (vl : 'a list) (al : t list) : t list =
+  match vl, al with
+  | [], [] -> []
+  | _, ({ tp; _ } as atom) :: ll when tp <> fourcc -> atom :: map_atoms fourcc fn vl ll
+  | v :: vs, ({ tp; _ } as a) :: ll when tp = fourcc -> 
+      let atom = { tp; data = fn v a } in
+      atom :: map_atoms fourcc fn vs ll
+  | _, _ -> failwith "mismatched atoms"
+
+let zip_leaf_atoms fourcc (fn : 'a -> bytes -> bytes) (aa : 'a list) =
+  let f v a = a |> leaf_from |> fn v |> leaf_of in
+  map_atoms fourcc f aa
+
+let zip_node_atoms fourcc (fn : 'a -> t list -> t list) (aa : 'a list) =
+  let f v a = a |> node_from |> fn v |> node_of in
+  map_atoms fourcc f aa
 

@@ -43,3 +43,5 @@ let moov (moov : Atoms.t list) : movie =
   let traks = Atoms.find_all_node_atoms "trak" moov |> List.map (trak mvhd) in
   { mvhd; traks }
 
+let tree (tree : Atoms.t list) : movie =
+  Atoms.find_node_atom "moov" tree |> moov
