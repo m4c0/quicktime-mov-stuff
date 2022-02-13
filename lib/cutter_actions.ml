@@ -19,8 +19,7 @@ let ltrim trk edt secs =
     if i = trk
     then 
       let edts = List.mapi chg_edit t.edts in
-      let dur_of (e : edit) = e.dur in
-      let tkhd = List.map dur_of edts |> MovieDuration.sum_all in
+      let tkhd = duration_of_edts edts in
       { t with tkhd; edts }
     else t
   in

@@ -58,6 +58,10 @@ type edit = { dur: mv_duration; mtime: md_duration; mrate: float }
 type track = { tkhd: mv_duration; mdhd: md_duration; edts: edit list }
 type movie = { mvhd: mv_duration; traks: track list }
 
+let duration_of_edts (edts : edit list) : mv_duration =
+  List.map (fun e -> e.dur) edts 
+  |> MovieDuration.sum_all
+
 let time_of_vs value scale : int * int * int * int =
   let ms = 100000 * (value mod scale) / scale in
   let secs = value / scale in

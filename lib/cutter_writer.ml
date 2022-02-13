@@ -1,23 +1,25 @@
 open Cutter_data
 
-let i32 bs i n = Bytes.set_int32_be bs i (Int32.of_int n); bs
+let i32 i n bs = Bytes.set_int32_be bs i (Int32.of_int n); bs
 
-let mvhd (m : movie) (mvhd : bytes) : bytes =
-  i32 mvhd 16 m.mvhd.value
+let mvhd (m : movie) : bytes -> bytes =
+  i32 16 m.mvhd.value
 
-let tkhd (t : track) (tkhd : bytes) : bytes =
-  i32 tkhd 20 t.tkhd.value
+let tkhd (t : track) : bytes -> bytes =
+  i32 20 t.tkhd.value
 
 let elst (e : edit list) (_ : bytes) : bytes =
   let p i = 8 + i * 12 in
   let qty = List.length e in
   let res = Bytes.make (p qty) '\x00' in
   let entry i en =
-    i32 res (p i) en.dur.value |> ignore;
-    i32 res (4 + p i) en.mtime.value |> ignore;
-    i32 res (8 + p i) (Float.to_int (65536.0 *. en.mrate)) |> ignore
+    res
+    |> i32 (p i) en.dur.value
+    |> i32 (4 + p i) en.mtime.value
+    |> i32 (8 + p i) (Float.to_int (65536.0 *. en.mrate))
+    |> ignore
   in
-  i32 res 4 qty |> ignore;
+  i32 4 qty res |> ignore;
   List.iteri entry e;
   res
 
