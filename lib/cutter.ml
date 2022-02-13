@@ -7,18 +7,19 @@ let spliteroo str =
 
 let run str =
   let open Cutter_actions in
-  let ltrim x =
+  let trim fn x =
     match String.split_on_char ' ' x with
     | [t; e; d] ->
         let ti = int_of_string t in
         let ei = int_of_string e in
         let di = int_of_string d in
-        ltrim ti ei di
+        fn ti ei di
     | _ -> failwith "invalid format for 'add'"
   in
   match spliteroo str with
   | ("load", file) -> load file
-  | ("ltrim", x) -> ltrim x
+  | ("ltrim", x) -> trim ltrim x
+  | ("rtrim", x) -> trim rtrim x
   | ("open", "") -> play ()
   | (x, _) -> failwith (x ^ ": unknown command")
 
