@@ -58,7 +58,8 @@ let rtrim trk edt secs =
 
 let delete trk edt = apply_edit trk edt (fun _ -> [])
 
-let volume trk (vol : int) =
+let volume trk (v : int) =
+  let vol = v * 256 / 100 in
   let fn t =
     [{ t with tkhd = { t.tkhd with vol } }]
   in
