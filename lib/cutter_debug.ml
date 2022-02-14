@@ -11,7 +11,6 @@ let dur_mv (title : string) (d : mv_duration)  =
   dur title hour min sec ms
 
 let edit (e : edit) =
-  print_endline "    Edits:";
   dur_mv "- Track duration" e.dur;
   dur_md "  Media time" e.mtime;
   Printf.printf "      Media rate: %f\n" e.mrate
@@ -20,6 +19,7 @@ let track (t : track) =
   print_endline "Track:";
   dur_mv "Duration" t.tkhd;
   dur_md "Media duration" t.mdhd;
+  print_endline "    Edits:";
   List.iter edit t.edts
 
 let movie (m : movie) =
