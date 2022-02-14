@@ -69,7 +69,7 @@ let from_file (file : string) : t list =
   Subchannel.open_with from_channel file
 
 let to_file (file : string) (atoms : t list) : unit =
-  let oc = open_out_gen [Open_wronly; Open_creat; Open_binary] 0o666 file in
+  let oc = open_out_gen [Open_wronly; Open_creat; Open_trunc; Open_binary] 0o666 file in
   let rec w (a : t) =
     output_binary_int oc (size_of a);
     output_string oc a.tp;
