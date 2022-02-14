@@ -10,6 +10,10 @@ let load file =
   Cutter_undo.purge ();
   dump ()
 
+let save_as file =
+  Atoms.to_file file !tree;
+  print_endline "done"
+
 let apply_edit trk edt efn =
   let mapi idx fn l =
     let mapi_fn idx fn i e = if i == idx then fn e else [ e ] in

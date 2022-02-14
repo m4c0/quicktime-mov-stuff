@@ -38,6 +38,7 @@ let run str =
   | ("rtrim", x) -> snikt rtrim x
   | ("split", x) -> snikt split x
   | ("open", "") -> play ()
+  | ("saveas", x) -> save_as x
   | ("dump", "") -> dump ()
   | ("undo", "") -> undo ()
   | ("redo", "") -> redo ()
