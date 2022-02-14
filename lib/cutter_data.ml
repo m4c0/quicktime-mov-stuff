@@ -33,7 +33,7 @@ module Duration (S : Scale) = struct
 
   let sum_all (l : t list) : t =
     let sum (a : t) (b : t) = {
-      value = (a.value * (scale_of b) / (scale_of a));
+      value = (a.value * (scale_of b) / (scale_of a)) + b.value;
       scale = b.scale;
     } in
     fold_left sum l
