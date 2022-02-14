@@ -54,8 +54,10 @@ module MovieDuration = Duration(MovieScale)
 type md_duration = MediaDuration.t
 type mv_duration = MovieDuration.t
 
+type track_head = { dur: mv_duration; vol: int }
+
 type edit = { dur: mv_duration; mtime: md_duration; mrate: float }
-type track = { tkhd: mv_duration; mdhd: md_duration; edts: edit list }
+type track = { tkhd: track_head; mdhd: md_duration; edts: edit list }
 type movie = { mvhd: mv_duration; traks: track list }
 
 let duration_of_edts (edts : edit list) : mv_duration =

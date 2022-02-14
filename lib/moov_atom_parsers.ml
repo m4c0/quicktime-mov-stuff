@@ -73,7 +73,7 @@ let tkhd (b : bytes) =
     (get_i16 b 34)
     (get_i16 b 36);
 
-  hexdump_sub b 24
+  hexdump_sub b 36
 
 let parser_of = function
   | "elst" -> elst

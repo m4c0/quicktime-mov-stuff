@@ -1,12 +1,15 @@
 open Cutter_data
 
+let i16 i n bs = Bytes.set_int16_be bs i n; bs
 let i32 i n bs = Bytes.set_int32_be bs i (Int32.of_int n); bs
 
 let mvhd (m : movie) : bytes -> bytes =
   i32 16 m.mvhd.value
 
-let tkhd (t : track) : bytes -> bytes =
-  i32 20 t.tkhd.value
+let tkhd (t : track) (bs : bytes) : bytes =
+  bs
+  |> i32 20 t.tkhd.dur.value
+  |> i16 36 t.tkhd.vol
 
 let elst (e : edit list) (_ : bytes) : bytes =
   let p i = 8 + i * 12 in
@@ -27,11 +30,13 @@ let edts (t : track) (edts : Atoms.t list) : Atoms.t list =
   Atoms.map_leaf_atom "elst" (elst t.edts) edts
 
 let trak (t : track) (trak : Atoms.t list) : Atoms.t list =
-  Atoms.map_leaf_atom "tkhd" (tkhd t) trak
+  trak
+  |> Atoms.map_leaf_atom "tkhd" (tkhd t)
   |> Atoms.map_node_atom "edts" (edts t)
 
 let moov (m : movie) (moov : Atoms.t list) =
-  Atoms.map_leaf_atom "mvhd" (mvhd m) moov
+  moov
+  |> Atoms.map_leaf_atom "mvhd" (mvhd m)
   |> Atoms.zip_node_atoms "trak" trak m.traks
 
 let tree (tree : Atoms.t list) (m : movie) =

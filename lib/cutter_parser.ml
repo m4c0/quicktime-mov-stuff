@@ -28,9 +28,11 @@ let mvhd (bs : bytes) : MovieDuration.t =
   let value = i32 bs 16 in
   { scale; value }
 
-let tkhd (mvhd : MovieDuration.t) (bs : bytes) : MovieDuration.t =
+let tkhd (mvhd : MovieDuration.t) (bs : bytes) : track_head =
   let v = i32 bs 20 in
-  MovieDuration.with_value v mvhd
+  let dur = MovieDuration.with_value v mvhd in
+  let vol = Bytes.get_int16_be bs 36 in
+  { dur; vol }
 
 let trak (mvhd : MovieDuration.t) (moov : Atoms.t list) : track =
   let tkhd = Atoms.find_leaf_atom "tkhd" moov |> tkhd mvhd in

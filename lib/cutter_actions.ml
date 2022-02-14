@@ -14,28 +14,32 @@ let save_as file =
   Atoms.to_file file !tree;
   print_endline "done"
 
-let apply_edit trk edt efn =
-  let mapi idx fn l =
-    let mapi_fn idx fn i e = if i == idx then fn e else [ e ] in
-    let res = List.mapi (mapi_fn idx fn) l |> List.concat in
-    if List.length res > 0
-    then res
-    else failwith "can't leave a track with no edits"
-  in
-  let lt_trak t : track list =
-    let edts = mapi edt efn t.edts in
-    let tkhd = duration_of_edts edts in
-    [ { t with tkhd; edts } ]
-  in
+let mapi idx fn l =
+  let mapi_fn idx fn i e = if i == idx then fn e else [ e ] in
+  let res = List.mapi (mapi_fn idx fn) l |> List.concat in
+  if List.length res > 0
+  then res
+  else failwith "can't leave a track with no edits"
+
+let apply_track trk tfn =
   let chg_movie m =
-    let traks = mapi trk lt_trak m.traks in
-    let dur_of (t : track) = t.tkhd in
+    let traks = mapi trk tfn m.traks in
+    let dur_of (t : track) = t.tkhd.dur in
     let mvhd = List.map dur_of traks |> MovieDuration.max_of in
     { mvhd; traks }
   in
   let t = !tree in
   tree := Cutter_parser.tree t |> Cutter_undo.add_undo |> chg_movie |> Cutter_writer.tree t;
   dump ()
+
+let apply_edit trk edt efn =
+  let lt_trak t : track list =
+    let edts = mapi edt efn t.edts in
+    let nd = duration_of_edts edts in
+    let tkhd = { t.tkhd with dur = nd } in
+    [ { t with tkhd; edts } ]
+  in
+  apply_track trk lt_trak
 
 let ltrim trk edt secs =
   let lt_edit e : edit list = 
@@ -53,6 +57,12 @@ let rtrim trk edt secs =
   apply_edit trk edt lt_edit
 
 let delete trk edt = apply_edit trk edt (fun _ -> [])
+
+let volume trk (vol : int) =
+  let fn t =
+    [{ t with tkhd = { t.tkhd with vol } }]
+  in
+  apply_track trk fn
 
 let split trk edt secs =
   let first e : edit =

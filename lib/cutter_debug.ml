@@ -17,8 +17,9 @@ let edit (e : edit) =
 
 let track (t : track) =
   print_endline "Track:";
-  dur_mv "Duration" t.tkhd;
+  dur_mv "Duration" t.tkhd.dur;
   dur_md "Media duration" t.mdhd;
+  Printf.printf "    Volume: %d%%\n" (t.tkhd.vol * 100 / 256);
   print_endline "    Edits:";
   List.iter edit t.edts
 
