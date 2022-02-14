@@ -8,13 +8,16 @@ let load file =
 
 let apply_edit trk edt efn =
   let mapi idx fn l =
-    let mapi_fn idx fn i e = if i == idx then fn e else e in
-    List.mapi (mapi_fn idx fn) l
+    let mapi_fn idx fn i e = if i == idx then fn e else [ e ] in
+    let res = List.mapi (mapi_fn idx fn) l |> List.concat in
+    if List.length res > 0
+    then res
+    else failwith "can't leave a track with no edits"
   in
-  let lt_trak t : track =
+  let lt_trak t : track list =
     let edts = mapi edt efn t.edts in
     let tkhd = duration_of_edts edts in
-    { t with tkhd; edts }
+    [ { t with tkhd; edts } ]
   in
   let chg_movie m =
     let traks = mapi trk lt_trak m.traks in
@@ -27,19 +30,33 @@ let apply_edit trk edt efn =
   Cutter_parser.tree !tree |> Cutter_debug.movie
 
 let ltrim trk edt secs =
-  let lt_edit e : edit = 
+  let lt_edit e : edit list = 
     let dur = MovieDuration.maps (fun d s -> d - secs * s) e.dur in
     let mtime = MediaDuration.maps (fun d s -> d + secs * s) e.mtime in
-    { e with dur; mtime }
+    [ { e with dur; mtime } ]
   in
   apply_edit trk edt lt_edit
 
 let rtrim trk edt secs =
-  let lt_edit e : edit = 
+  let lt_edit e : edit list = 
     let dur = MovieDuration.maps (fun d s -> d - secs * s) e.dur in
-    { e with dur }
+    [ { e with dur } ]
   in
   apply_edit trk edt lt_edit
+
+let delete trk edt = apply_edit trk edt (fun _ -> [])
+
+let split trk edt secs =
+  let first e : edit =
+    let dur = MovieDuration.maps (fun _ s -> secs * s) e.dur in
+    { e with dur }
+  in
+  let second e : edit =
+    let dur = MovieDuration.maps (fun d s -> d - secs * s) e.dur in
+    let mtime = MediaDuration.maps (fun d s -> d + secs * s) e.mtime in
+    { e with dur; mtime }
+  in
+  apply_edit trk edt (fun e -> [ first e; second e ])
 
 let play () =
   Atoms.to_file "/tmp/m4c0.cutter.test.mov" !tree;
