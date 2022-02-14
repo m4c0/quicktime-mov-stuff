@@ -1,3 +1,4 @@
+let get_i16 b idx = Bytes.get_int16_be b idx
 let get_i32 b idx = Bytes.get_int32_be b idx |> Int32.to_int
 
 let print_vf (b : bytes) =
@@ -59,10 +60,18 @@ let tkhd (b : bytes) =
     (get_i32 b 8);
 
   Printf.printf
-    "Track id = %d - Reserved = %d - Duration = %d\n"
+    "Track id = %d - Reserved = %d - Duration = %d - Reserved = %d.%d\n"
     (get_i32 b 12)
     (get_i32 b 16)
-    (get_i32 b 20);
+    (get_i32 b 20)
+    (get_i32 b 24)
+    (get_i32 b 28);
+
+  Printf.printf
+    "Layer = %d - Alternate Group = %d - Volume %d\n"
+    (get_i16 b 32)
+    (get_i16 b 34)
+    (get_i16 b 36);
 
   hexdump_sub b 24
 
