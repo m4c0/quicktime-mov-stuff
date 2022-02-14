@@ -2,9 +2,13 @@ open Cutter_data
 
 let tree : Atoms.t list ref = ref []
 
+let dump () =
+  Cutter_parser.tree !tree |> Cutter_debug.movie
+
 let load file =
   tree := Atoms.from_file file;
-  Cutter_parser.tree !tree |> Cutter_debug.movie
+  Cutter_undo.purge ();
+  dump ()
 
 let apply_edit trk edt efn =
   let mapi idx fn l =
@@ -26,8 +30,8 @@ let apply_edit trk edt efn =
     { mvhd; traks }
   in
   let t = !tree in
-  tree := Cutter_parser.tree t |> chg_movie |> Cutter_writer.tree t;
-  Cutter_parser.tree !tree |> Cutter_debug.movie
+  tree := Cutter_parser.tree t |> Cutter_undo.add_undo |> chg_movie |> Cutter_writer.tree t;
+  dump ()
 
 let ltrim trk edt secs =
   let lt_edit e : edit list = 
@@ -63,6 +67,14 @@ let play () =
   Unix.system "open /tmp/m4c0.cutter.test.mov" |> ignore;
   print_endline "done"
 
+let undo () =
+  tree := Cutter_parser.tree !tree |> Cutter_undo.undo |> Cutter_writer.tree !tree;
+  dump ()
+
+let redo () = 
+  tree := Cutter_parser.tree !tree |> Cutter_undo.redo |> Cutter_writer.tree !tree;
+  dump ()
+
 let foreach_track fn =
-  let t = Cutter_parser.tree !tree in
-  List.iteri (fun i _ -> fn i) t.traks
+  let t = Cutter_parser.tree !tree |> Cutter_undo.add_undo in
+  List.iteri (fun i _ -> fn i; Cutter_undo.pop_undo ()) t.traks

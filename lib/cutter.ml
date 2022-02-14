@@ -38,6 +38,9 @@ let run str =
   | ("rtrim", x) -> snikt rtrim x
   | ("split", x) -> snikt split x
   | ("open", "") -> play ()
+  | ("dump", "") -> dump ()
+  | ("undo", "") -> undo ()
+  | ("redo", "") -> redo ()
   | (x, _) -> failwith (x ^ ": unknown command")
 
 let repl () = Repl.repl run
