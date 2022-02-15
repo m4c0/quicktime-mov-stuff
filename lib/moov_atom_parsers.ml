@@ -9,13 +9,32 @@ let print_vf (b : bytes) =
     (Bytes.get_int8 b 2)
     (Bytes.get_int8 b 3)
 
-let hexdump (b : bytes) =
-  for n = 0 to (Bytes.length b) do
-    let idx = n mod 16 in
-    Printf.printf "%02x" (Bytes.get_int8 b n);
-    print_string (match idx with 7 -> "    " | 15 -> "\n" | _ -> " ");
-  done;
-  print_newline ()
+let hexdump (bs : bytes) =
+  let bslen = Bytes.length bs in
+  let sep idx acc chr = 
+    let nacc = acc ^ (String.make 1 chr) in
+    match idx mod 16 with
+    | 7 -> (nacc, "    ")
+    | 15 -> ("", "    [" ^ nacc ^ "]\n")
+    | _ -> (nacc, " ")
+  in
+  let rec pad idx acc =
+    print_string "  ";
+    match sep idx acc ' ' with
+    | ("", s) -> print_string s
+    | (a, s) -> print_string s; pad (idx + 1) a
+  in
+  let rec prn idx acc =
+    let b = Bytes.get_int8 bs idx in
+    let chr = if b >= 32 && b <= 127 then Char.chr b else ' ' in
+    let (nacc, s) = sep idx acc chr in
+    let nidx = idx + 1 in
+    Printf.printf "%02x%s" b s;
+    if nidx < bslen
+    then prn nidx nacc
+    else if bslen mod 16 > 0 then pad nidx nacc
+  in
+  prn 0 ""
 
 let hexdump_sub (b : bytes) (i : int) =
   let len = (Bytes.length b) - i in
