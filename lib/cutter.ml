@@ -33,7 +33,8 @@ let run str =
   in
   match spliteroo str with
   | ("load", file) -> load file
-  | ("volume", x) -> snikt2 volume x
+  | ("trackvolume", x) -> snikt2 volume x
+  | ("volume", x) -> movie_volume (int_of_string x)
   | ("delete", x) -> snikt2 delete x
   | ("ltrim", x) -> snikt ltrim x
   | ("rtrim", x) -> snikt rtrim x

@@ -25,6 +25,7 @@ let track (t : track) =
 
 let movie (m : movie) =
   print_endline "Movie:";
-  dur_mv "Duration" m.mvhd;
+  dur_mv "Duration" m.mvhd.dur;
+  Printf.printf "Volume: %d%%\n" (m.mvhd.vol * 100 / 256);
   List.iter track m.traks
 

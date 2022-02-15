@@ -25,7 +25,8 @@ let apply_track trk tfn =
   let chg_movie m =
     let traks = mapi trk tfn m.traks in
     let dur_of (t : track) = t.tkhd.dur in
-    let mvhd = List.map dur_of traks |> MovieDuration.max_of in
+    let dur = List.map dur_of traks |> MovieDuration.max_of in
+    let mvhd = { m.mvhd with dur } in
     { mvhd; traks }
   in
   let t = !tree in
@@ -57,6 +58,13 @@ let rtrim trk edt secs =
   apply_edit trk edt lt_edit
 
 let delete trk edt = apply_edit trk edt (fun _ -> [])
+
+let movie_volume (v : int) =
+  let vol = v * 256 / 100 in
+  let fn m = { m with mvhd = { m.mvhd with vol } } in
+  let t = !tree in
+  tree := Cutter_parser.tree t |> Cutter_undo.add_undo |> fn |> Cutter_writer.tree t;
+  dump ()
 
 let volume trk (v : int) =
   let vol = v * 256 / 100 in

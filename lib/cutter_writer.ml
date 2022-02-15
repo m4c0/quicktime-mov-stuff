@@ -3,8 +3,10 @@ open Cutter_data
 let i16 i n bs = Bytes.set_int16_be bs i n; bs
 let i32 i n bs = Bytes.set_int32_be bs i (Int32.of_int n); bs
 
-let mvhd (m : movie) : bytes -> bytes =
-  i32 16 m.mvhd.value
+let mvhd (m : movie) (bs : bytes) : bytes =
+  bs
+  |> i32 16 m.mvhd.dur.value
+  |> i16 24 m.mvhd.vol
 
 let tkhd (t : track) (bs : bytes) : bytes =
   bs

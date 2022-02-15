@@ -1,5 +1,6 @@
 open Cutter_data
 
+let i16 bs n = Bytes.get_int16_be bs n
 let i32 bs n = Bytes.get_int32_be bs n |> Int32.to_int
 
 let elst (mvhd : MovieDuration.t) (mdhd : MediaDuration.t) (bs : bytes) : edit list =
@@ -23,26 +24,28 @@ let mdhd (bs : bytes) : MediaDuration.t =
   let value = i32 bs 16 in
   { scale; value }
 
-let mvhd (bs : bytes) : MovieDuration.t = 
+let mvhd (bs : bytes) : mt_head = 
   let scale = i32 bs 12 |> MovieScale.of_int in
   let value = i32 bs 16 in
-  { scale; value }
+  let dur : MovieDuration.t = { scale; value } in
+  let vol = i16 bs 24 in
+  { dur; vol }
 
-let tkhd (mvhd : MovieDuration.t) (bs : bytes) : track_head =
+let tkhd (md : MovieDuration.t) (bs : bytes) : mt_head =
   let v = i32 bs 20 in
-  let dur = MovieDuration.with_value v mvhd in
+  let dur = MovieDuration.with_value v md in
   let vol = Bytes.get_int16_be bs 36 in
   { dur; vol }
 
-let trak (mvhd : MovieDuration.t) (moov : Atoms.t list) : track =
-  let tkhd = Atoms.find_leaf_atom "tkhd" moov |> tkhd mvhd in
+let trak (md : MovieDuration.t) (moov : Atoms.t list) : track =
+  let tkhd = Atoms.find_leaf_atom "tkhd" moov |> tkhd md in
   let mdhd = Atoms.find_node_atom "mdia" moov |> Atoms.find_leaf_atom "mdhd" |> mdhd in
-  let edts = Atoms.find_node_atom "edts" moov |> Atoms.find_leaf_atom "elst" |> elst mvhd mdhd in
+  let edts = Atoms.find_node_atom "edts" moov |> Atoms.find_leaf_atom "elst" |> elst md mdhd in
   { tkhd; mdhd; edts }
 
 let moov (moov : Atoms.t list) : movie =
   let mvhd = Atoms.find_leaf_atom "mvhd" moov |> mvhd in
-  let traks = Atoms.find_all_node_atoms "trak" moov |> List.map (trak mvhd) in
+  let traks = Atoms.find_all_node_atoms "trak" moov |> List.map (trak mvhd.dur) in
   { mvhd; traks }
 
 let tree (tree : Atoms.t list) : movie =
