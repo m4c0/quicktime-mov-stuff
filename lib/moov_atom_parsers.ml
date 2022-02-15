@@ -1,16 +1,16 @@
-let get_i16 b idx = Bytes.get_int16_be b idx
+let get_i16 b idx = Bytes.get_uint16_be b idx
 let get_i32 b idx = Bytes.get_int32_be b idx |> Int32.to_int
 
 let print_vf (b : bytes) =
   Printf.printf
     "Version: %d - Flags: %d %d %d\n"
-    (Bytes.get_int8 b 0)
-    (Bytes.get_int8 b 1)
-    (Bytes.get_int8 b 2)
-    (Bytes.get_int8 b 3)
+    (Bytes.get_uint8 b 0)
+    (Bytes.get_uint8 b 1)
+    (Bytes.get_uint8 b 2)
+    (Bytes.get_uint8 b 3)
 
 let hexdump (bs : bytes) =
-  let bslen = Bytes.length bs in
+  let bslen = Int.min (Bytes.length bs) 1024 in
   let sep idx acc chr = 
     let nacc = acc ^ (String.make 1 chr) in
     match idx mod 16 with
@@ -25,7 +25,7 @@ let hexdump (bs : bytes) =
     | (a, s) -> print_string s; pad (idx + 1) a
   in
   let rec prn idx acc =
-    let b = Bytes.get_int8 bs idx in
+    let b = Bytes.get_uint8 bs idx in
     let chr = if b >= 32 && b <= 127 then Char.chr b else ' ' in
     let (nacc, s) = sep idx acc chr in
     let nidx = idx + 1 in

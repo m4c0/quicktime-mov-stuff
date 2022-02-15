@@ -10,8 +10,8 @@ let ios (msg : string) (str : string) : int =
   try int_of_string str
   with _ -> failwith (str ^ ": " ^ msg)
 
-open Moov_actions
 let run (str : string) =
+  let open Moov_actions in
   let trim = trimmed_substr str in
   let offs i = trim i |> ios "invalid offset" in
   let size i = trim i |> ios "invalid size" in
