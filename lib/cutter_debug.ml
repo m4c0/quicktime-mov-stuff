@@ -10,10 +10,12 @@ let dur_mv (title : string) (d : mv_duration)  =
   let (hour, min, sec, ms) = time_of_mvd d in
   dur title hour min sec ms
 
-let edit (e : edit) =
-  dur_mv "- Track duration" e.dur;
+let edit (start : mv_duration) (e : edit) =
+  dur_mv "- Start at" start;
+  dur_mv "  Track duration" e.dur;
   dur_md "  Media time" e.mtime;
-  Printf.printf "      Media rate: %f\n" e.mrate
+  Printf.printf "      Media rate: %f\n" e.mrate;
+  MovieDuration.sum_all [start; e.dur]
 
 let track (t : track) =
   print_endline "Track:";
@@ -21,7 +23,8 @@ let track (t : track) =
   dur_md "Media duration" t.mdhd;
   Printf.printf "    Volume: %d%%\n" (t.tkhd.vol * 100 / 256);
   print_endline "    Edits:";
-  List.iter edit t.edts
+  List.fold_left edit (MovieDuration.with_value 0 t.tkhd.dur) t.edts
+  |> ignore
 
 let movie (m : movie) =
   print_endline "Movie:";
