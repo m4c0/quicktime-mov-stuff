@@ -22,6 +22,7 @@ let run (str : string) =
   | ['d'] -> dump ()
   | 'e' :: ' ' :: _ -> edit (trim 2)
   | ['f'; ' '; a; b; c; d] -> find_first (fourcc a b c d)
+  | ['f'; 'n'; ' '; a; b; c; d] -> find_next (fourcc a b c d)
   | 'j' :: ' ' :: _ -> jump (offs 2)
   | 'J' :: ' ' :: _ -> jump (offs 2)
   | ['p'] -> print ()

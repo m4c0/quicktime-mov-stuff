@@ -49,21 +49,33 @@ let move_cursor (mt : move_type) =
     a
   with e -> raise e
 
+let rec find (fourcc : string) (tree : Atoms.t list) (cur : int list) =
+  let hd = List.hd cur in
+  let tl = List.tl cur in
+  match tree with
+  | { tp; _ } :: _ when tp = fourcc -> cur
+  | { data=Node(n); _ } :: tt -> (
+      try find fourcc n (0 :: cur)
+      with _ -> find fourcc tt (hd + 1 :: tl)
+  )
+  | { data=Leaf(_); _ } :: tt -> 
+      find fourcc tt (hd + 1 :: tl)
+  | [] -> failwith (fourcc ^ ": not found")
+
 let find_first (fourcc : string) =
-  let rec fn (tree : Atoms.t list) (cur : int list) =
-    let hd = List.hd cur in
-    let tl = List.tl cur in
-    match tree with
-    | { tp; _ } :: _ when tp = fourcc -> cur
-    | { data=Node(n); _ } :: tt -> (
-        try fn n (0 :: cur)
-        with _ -> fn tt (hd + 1 :: tl)
-    )
-    | { data=Leaf(_); _ } :: tt -> 
-        fn tt (hd + 1 :: tl)
-    | [] -> failwith (fourcc ^ ": not found")
+  cursor := find fourcc !atom_tree [0];
+  atom_at_cursor ()
+
+let find_next (fourcc : string) =
+  let rec sub n l = if n = -1 then l else sub (n - 1) (List.tl l) in
+  let rec bs atoms cur ncur = match cur with
+  | [] -> failwith (fourcc ^ ": not found")
+  | [x] -> find fourcc (sub x atoms) [x + 1]
+  | hd :: tl ->
+      try bs (List.nth atoms hd |> Atoms.node_from) tl (hd :: ncur) 
+      with _ -> find fourcc (sub hd atoms) (hd + 1 :: ncur)
   in
-  cursor := fn !atom_tree [0];
+  cursor := bs !atom_tree (List.rev !cursor) [];
   atom_at_cursor ()
 
 let fold_tree fn init = List.fold_left fn init !atom_tree

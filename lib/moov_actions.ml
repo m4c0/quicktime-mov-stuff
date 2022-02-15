@@ -40,6 +40,7 @@ let edit file =
   Printf.printf "%d\n" len
 
 let find_first fourcc = Moov_state.find_first fourcc |> !printer
+let find_next fourcc = Moov_state.find_next fourcc |> !printer
 
 let jump offs = move (Absolute offs)
 
