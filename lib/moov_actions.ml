@@ -39,6 +39,8 @@ let edit file =
   current_file := file;
   Printf.printf "%d\n" len
 
+let find_first fourcc = Moov_state.find_first fourcc |> !printer
+
 let jump offs = move (Absolute offs)
 
 let print () = 

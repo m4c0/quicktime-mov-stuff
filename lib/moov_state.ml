@@ -49,6 +49,23 @@ let move_cursor (mt : move_type) =
     a
   with e -> raise e
 
+let find_first (fourcc : string) =
+  let rec fn (tree : Atoms.t list) (cur : int list) =
+    let hd = List.hd cur in
+    let tl = List.tl cur in
+    match tree with
+    | { tp; _ } :: _ when tp = fourcc -> cur
+    | { data=Node(n); _ } :: tt -> (
+        try fn n (0 :: cur)
+        with _ -> fn tt (hd + 1 :: tl)
+    )
+    | { data=Leaf(_); _ } :: tt -> 
+        fn tt (hd + 1 :: tl)
+    | [] -> failwith (fourcc ^ ": not found")
+  in
+  cursor := fn !atom_tree [0];
+  atom_at_cursor ()
+
 let fold_tree fn init = List.fold_left fn init !atom_tree
 let iter_tree fn = List.iter fn !atom_tree
 let map_tree fn = atom_tree := fn !atom_tree; !atom_tree

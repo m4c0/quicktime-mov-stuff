@@ -21,6 +21,7 @@ let run (str : string) =
   | 'a' :: 'c' :: ' ' :: a :: b :: c :: d :: ' ' :: _ -> append_children (fourcc a b c d) (offs 8 |> bc)
   | ['d'] -> dump ()
   | 'e' :: ' ' :: _ -> edit (trim 2)
+  | ['f'; ' '; a; b; c; d] -> find_first (fourcc a b c d)
   | 'j' :: ' ' :: _ -> jump (offs 2)
   | 'J' :: ' ' :: _ -> jump (offs 2)
   | ['p'] -> print ()
