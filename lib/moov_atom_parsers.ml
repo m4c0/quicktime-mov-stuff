@@ -47,10 +47,10 @@ let elst (b : bytes) =
   let num_entries = Bytes.get_int32_be b 4 |> Int32.to_int in
   Printf.printf "Entries: %d\n" num_entries;
 
-  for _ = 1 to num_entries do
-    let d = get_i32 b 8 in
-    let i = get_i32 b 12 in
-    let r = get_i32 b 16 in
+  for n = 1 to num_entries do
+    let d = get_i32 b 8 + 12 * n in
+    let i = get_i32 b 12 + 12 * n in
+    let r = get_i32 b 16 + 12 * n in
     let fr = (float_of_int r) /. 65536.0 in
     Printf.printf "  Duration: %d - Time: %d - Rate: %f\n" d i fr
   done
@@ -69,6 +69,18 @@ let mvhd (b : bytes) =
     (get_i32 b 16);
 
   hexdump_sub b 20
+
+let stsd (b : bytes) =
+  let n = get_i32 b 4 in
+  print_vf b;
+  Printf.printf "Entries: %d (only showing first)\n" n;
+  Printf.printf
+    "- Size: %d - Data format: %s - Data ref: %d\n" 
+    (get_i32 b 8)
+    (Bytes.sub_string b 12 4)
+    (get_i16 b 22);
+
+  hexdump_sub b 24
 
 let tkhd (b : bytes) =
   print_vf b;
@@ -98,5 +110,6 @@ let parser_of = function
   | "elst" -> elst
   | "mdhd" -> mvhd (* almost equals to mvhd - anything after byte 20 isn't *)
   | "mvhd" -> mvhd
+  | "stsd" -> stsd
   | "tkhd" -> tkhd
   | _ -> hexdump
